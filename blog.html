@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>博客</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <h1>我的博客</h1>
+    <p>记录学习笔记、算法题解与一些技术整理</p>
+  </header>
+
+  <section class="portfolio-layout blog-layout">
+    <aside class="project-sidebar blog-sidebar">
+      <div class="sidebar-card blog-sidebar-card">
+        <h2>文章目录</h2>
+        <p class="sidebar-intro">
+          点击左侧文章标题，右侧会切换到对应内容。
+        </p>
+
+        <div class="directory-scroll">
+          <button class="directory-button active" data-article="post-logger" data-file="blogs/logger_standard.md">
+            1. 日志的规范
+          </button>
+
+          <button class="directory-button" data-article="post-SSH" data-file="blogs/ssh_use.md">
+            2.SSH的使用
+          </button>
+
+          <button class="directory-button" data-article="post-test" data-file="blogs/test.md">
+            3. test
+          </button>
+
+          <!-- 新增文章 -->
+          <!--
+          <button class="directory-button" data-article="post-002" data-file="blogs/dp.md">
+            3.???
+          </button>
+          -->
+        </div>
+
+        <div class="blog-sidebar-actions">
+          <a href="https://leetcode.cn/u/great-i3assidx6/" target="_blank" class="button small-button">
+            跳转至我的 LeetCode 主页
+          </a>
+          <a href="index.html" class="button small-button">
+            返回首页
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <div class="project-detail-area blog-content-area">
+      <article class="project-detail-card blog-main-card active" id="post-logger">
+        <span class="project-tag">Blog</span>
+        <h2>日志的规范</h2>
+        <p class="article-meta">分类：实用工具</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
+      <article class="project-detail-card blog-main-card" id="post-SSH">
+        <span class="project-tag">Blog</span>
+        <h2>SSH的使用</h2>
+        <p class="article-meta">分类：实用工具</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
+      <article class="project-detail-card blog-main-card" id="post-test">
+        <span class="project-tag">Blog</span>
+        <h2>test</h2>
+        <p class="article-meta">分类：test</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
+      <!-- 新增文章 -->
+      <!--
+      <article class="project-detail-card blog-main-card" id="post-002">
+        <span class="project-tag">Blog</span>
+        <h2>???</h2>
+        <p class="article-meta">分类：???</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+      -->
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 yifan. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const directoryButtons = document.querySelectorAll('.directory-button');
+    const articleCards = document.querySelectorAll('.blog-main-card');
+    const loadedFiles = new Map();
+
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
+
+    async function loadArticleFromFile(card, filePath) {
+      const contentBox = card.querySelector('[data-content]');
+      if (!contentBox || !filePath) return;
+
+      if (loadedFiles.has(filePath)) {
+        contentBox.innerHTML = loadedFiles.get(filePath);
+        return;
+      }
+
+      try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+          throw new Error('Failed to load file');
+        }
+
+        const text = await response.text();
+        const html = marked.parse(text);
+        const finalHtml = html || '<p>暂无内容</p>';
+
+        loadedFiles.set(filePath, finalHtml);
+        contentBox.innerHTML = finalHtml;
+      } catch (error) {
+        contentBox.innerHTML = '<p>文章加载失败，请检查文件路径是否正确。</p>';
+      }
+    }
+
+    async function showArticle(articleId) {
+      directoryButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.article === articleId);
+      });
+
+      articleCards.forEach((card) => {
+        card.classList.toggle('active', card.id === articleId);
+      });
+
+      const activeButton = document.querySelector(`.directory-button[data-article="${articleId}"]`);
+      const activeCard = document.getElementById(articleId);
+
+      if (activeButton && activeCard && activeButton.dataset.file) {
+        await loadArticleFromFile(activeCard, activeButton.dataset.file);
+      }
+
+      if (history.replaceState) {
+        history.replaceState(null, '', `#${articleId}`);
+      } else {
+        location.hash = articleId;
+      }
+    }
+
+    directoryButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        showArticle(button.dataset.article);
+      });
+    });
+
+    const firstButton = directoryButtons[0];
+    const defaultArticleId = firstButton ? firstButton.dataset.article : '';
+    const hashArticle = location.hash ? location.hash.replace('#', '') : '';
+    const hasHashTarget = document.getElementById(hashArticle);
+
+    if (hasHashTarget) {
+      showArticle(hashArticle);
+    } else if (defaultArticleId) {
+      showArticle(defaultArticleId);
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目展示</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header>
+    <h1>项目展示</h1>
+    <p>从左侧选择项目，查看详细介绍</p>
+  </header>
+
+  <section class="portfolio-layout">
+  <aside class="project-sidebar">
+    <div class="sidebar-card showcase-sidebar-card">
+      <h2>项目列表</h2>
+      <p class="sidebar-intro">点击左侧项目名称，右侧会展示对应的项目详情。</p>
+
+      <nav class="project-nav">
+        <button class="project-nav-button active" data-project="thunder-fighter">
+          雷霆战机 Thunder Fighter
+        </button>
+      </nav>
+
+      <div class="showcase-sidebar-actions">
+        <a href="index.html" class="button small-button">
+          返回主页
+        </a>
+      </div>
+    </div>
+  </aside>
+
+    <div class="project-detail-area">
+      <article class="project-detail-card active" id="thunder-fighter">
+        <span class="project-tag">C++ Game</span>
+        <h2>雷霆战机 Thunder Fighter</h2>
+        <p class="project-desc">
+          一个基于 C++ 开发的雷霆战机小游戏项目，支持本地运行与体验。
+        </p>
+
+        <div class="detail-grid">
+          <!-- 左边：操作指南 -->
+          <div class="detail-box">
+            <h3>操作指南</h3>
+            <ul>
+              <li><strong>移动：</strong>使用 W / A / S / D 控制战机移动</li>
+              <li><strong>攻击：</strong>Space</li>
+              <li><strong>开始游戏：</strong>启动程序后根据界面提示进入游戏</li>
+              <li><strong>退出游戏：</strong>点击Esc</li>
+            </ul>
+          </div>
+
+          <!-- 右边：项目链接 -->
+          <div class="detail-box">
+            <h3>项目链接</h3>
+            <div class="project-links vertical-links">
+              <a href="release/Thunder_fighter_jet.exe" download class="button small-button">
+                本地 EXE 下载
+              </a>
+              <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet/releases/tag/v1.0.0" target="_blank" class="button small-button">
+                GitHub Release 下载
+              </a>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 yifan. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const navButtons = document.querySelectorAll('.project-nav-button');
+    const detailCards = document.querySelectorAll('.project-detail-card');
+
+    function showProject(projectId) {
+      navButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.project === projectId);
+      });
+
+      detailCards.forEach((card) => {
+        card.classList.toggle('active', card.id === projectId);
+      });
+
+      if (history.replaceState) {
+        history.replaceState(null, '', `#${projectId}`);
+      } else {
+        location.hash = projectId;
+      }
+    }
+
+    navButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        showProject(button.dataset.project);
+      });
+    });
+
+    showProject('thunder-fighter');
+  </script>
+
+</body>
+</html>
