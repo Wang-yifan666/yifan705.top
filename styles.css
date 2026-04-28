@@ -1,5 +1,10 @@
+/* ============================================================
+   全局基础样式 — 应用于所有页面
+   ============================================================ */
+
+/* 页面主体：设置字体、背景色、最小高度和 flex 布局 */
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Ubuntu", "Ubuntu Mono", "Segoe UI", "Roboto", Arial, sans-serif;
   margin: 0;
   padding: 0;
   background-color: #78c8e8;
@@ -7,8 +12,35 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow-x: hidden;
 }
 
+/* ============================================================
+   水波纹画布背景 — 覆盖全屏
+   ============================================================ */
+
+#ripple-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 让所有直接子元素在 canvas 上方显示 */
+body > *:not(#ripple-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   首页（index.html）头部区域
+   ============================================================ */
+
+/* 页面顶部 header：包含标题和副标题 */
 header {
   background-color: #78c8e8;
   color: #2c3e50;
@@ -16,16 +48,23 @@ header {
   text-align: center;
 }
 
+/* header 中的主标题 */
 header h1 {
   margin: 0;
   font-size: 36px;
 }
 
+/* header 中的副标题/描述文字 */
 header p {
   font-size: 18px;
   margin-top: 10px;
 }
 
+/* ============================================================
+   首页（index.html）主要内容区域
+   ============================================================ */
+
+/* 主内容容器：flex 居中，用于首页的按钮组 */
 .main-content {
   flex: 1;
   padding: 60px 20px 40px;
@@ -35,6 +74,7 @@ header p {
   align-items: center;
 }
 
+/* 按钮容器：水平排列多个导航按钮 */
 .button-container {
   display: flex;
   justify-content: center;
@@ -42,6 +82,7 @@ header p {
   flex-wrap: wrap;
 }
 
+/* 通用导航按钮样式（首页大按钮） */
 .button {
   padding: 14px 28px;
   background-color: #2c3e50;
@@ -57,16 +98,23 @@ header p {
   cursor: pointer;
 }
 
+/* 导航按钮悬停效果 */
 .button:hover {
   background-color: #34495e;
   transform: translateY(-2px);
 }
 
+/* 首页左右两侧按钮的容器 */
 .left,
 .right {
   text-align: center;
 }
 
+/* ============================================================
+   页脚 — 所有页面通用
+   ============================================================ */
+
+/* 页面底部 footer */
 footer {
   text-align: center;
   padding: 28px 20px;
@@ -75,12 +123,18 @@ footer {
   margin-top: auto;
 }
 
+/* ============================================================
+   子页面通用布局（blog.html / showcase.html 等）
+   ============================================================ */
+
+/* 子页面内容区域：flex 撑满剩余空间，内容居中 */
 .subpage-content {
   flex: 1;
   padding: 60px 20px 40px;
   text-align: center;
 }
 
+/* 返回首页按钮 */
 .back-button {
   margin-top: 30px;
   padding: 12px 24px;
@@ -93,11 +147,13 @@ footer {
   transition: background-color 0.3s, transform 0.3s;
 }
 
+/* 返回按钮悬停效果 */
 .back-button:hover {
   background-color: #34495e;
   transform: translateY(-2px);
 }
 
+/* GitHub 链接区域 */
 .github-link-box {
   margin-top: 40px;
   text-align: center;
@@ -105,6 +161,7 @@ footer {
   color: #2c3e50;
 }
 
+/* GitHub 链接样式 */
 .github-link-box a {
   color: #2c3e50;
   text-decoration: none;
@@ -112,10 +169,16 @@ footer {
   word-break: break-all;
 }
 
+/* GitHub 链接悬停效果 */
 .github-link-box a:hover {
   text-decoration: underline;
 }
 
+/* ============================================================
+   作品集页面（showcase.html）— 双栏布局
+   ============================================================ */
+
+/* 作品集整体布局：左右两栏 flex 排列 */
 .portfolio-layout {
   flex: 1;
   display: flex;
@@ -125,11 +188,13 @@ footer {
   box-sizing: border-box;
 }
 
+/* 左侧项目列表栏 */
 .project-sidebar {
-  width: 33.3333%;
-  min-width: 260px;
+  width: 28%;
+  min-width: 240px;
 }
 
+/* 侧边栏卡片容器（半透明背景） */
 .sidebar-card {
   background-color: rgba(255, 255, 255, 0.75);
   border-radius: 18px;
@@ -139,16 +204,19 @@ footer {
   box-shadow: 0 10px 24px rgba(44, 62, 80, 0.12);
 }
 
+/* 侧边栏卡片内的标题 */
 .sidebar-card h2 {
   margin-top: 0;
   color: #2c3e50;
 }
 
+/* 侧边栏简介文字 */
 .sidebar-intro {
   line-height: 1.7;
   margin-bottom: 24px;
 }
 
+/* 项目导航按钮列表容器 */
 .project-nav {
   display: flex;
   flex-direction: column;
@@ -156,6 +224,7 @@ footer {
   margin-bottom: 24px;
 }
 
+/* 单个项目导航按钮 */
 .project-nav-button {
   width: 100%;
   padding: 16px 18px;
@@ -170,17 +239,20 @@ footer {
   box-shadow: 0 6px 16px rgba(44, 62, 80, 0.08);
 }
 
+/* 项目导航按钮悬停效果 */
 .project-nav-button:hover {
   transform: translateY(-2px);
   border-color: #2c3e50;
 }
 
+/* 项目导航按钮 — 选中状态 */
 .project-nav-button.active {
   background-color: #2c3e50;
   color: white;
   border-color: #2c3e50;
 }
 
+/* 返回链接（侧边栏底部） */
 .back-link {
   display: inline-block;
   margin-top: 8px;
@@ -189,14 +261,17 @@ footer {
   font-weight: bold;
 }
 
+/* 返回链接悬停效果 */
 .back-link:hover {
   text-decoration: underline;
 }
 
+/* 右侧项目详情区域 */
 .project-detail-area {
-  width: 66.6667%;
+  width: 72%;
 }
 
+/* 项目详情卡片（默认隐藏，通过 .active 显示） */
 .project-detail-card {
   display: none;
   background-color: rgba(255, 255, 255, 0.82);
@@ -207,10 +282,12 @@ footer {
   box-sizing: border-box;
 }
 
+/* 项目详情卡片 — 显示状态 */
 .project-detail-card.active {
   display: block;
 }
 
+/* 项目标签（如技术栈标签） */
 .project-tag {
   display: inline-block;
   padding: 6px 12px;
@@ -222,24 +299,28 @@ footer {
   margin-bottom: 14px;
 }
 
+/* 项目详情卡片内的标题 */
 .project-detail-card h2 {
   margin-top: 0;
   color: #2c3e50;
   font-size: 32px;
 }
 
+/* 项目描述文字 */
 .project-desc {
   font-size: 18px;
   line-height: 1.8;
   margin-bottom: 24px;
 }
 
+/* 详情网格布局（2 列排列详情框） */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 
+/* 单个详情框 */
 .detail-box {
   background-color: rgba(255, 255, 255, 0.88);
   border-radius: 16px;
@@ -248,27 +329,32 @@ footer {
   box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
 }
 
+/* 详情框内的小标题 */
 .detail-box h3 {
   margin-top: 0;
   color: #2c3e50;
 }
 
+/* 详情框内的段落和列表项 */
 .detail-box p,
 .detail-box li {
   line-height: 1.7;
 }
 
+/* 详情框内的无序列表 */
 .detail-box ul {
   margin: 0;
   padding-left: 20px;
 }
 
+/* 垂直排列的链接列表 */
 .vertical-links {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* 小号按钮（用于详情框内） */
 .small-button {
   font-size: 18px;
   min-width: 0;
@@ -276,62 +362,22 @@ footer {
   box-sizing: border-box;
 }
 
-@media (max-width: 960px) {
-  .portfolio-layout {
-    flex-direction: column;
-  }
+/* ============================================================
+   博客页面（blog.html）— 侧边栏目录 + 文章内容
+   ============================================================ */
 
-  .project-sidebar,
-  .project-detail-area {
-    width: 100%;
-  }
-
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  header h1 {
-    font-size: 30px;
-  }
-
-  .button {
-    font-size: 22px;
-    width: 100%;
-  }
-
-  .portfolio-layout {
-    padding: 20px 16px 30px;
-  }
-
-  .sidebar-card,
-  .project-detail-card {
-    padding: 22px 18px;
-  }
-
-  .project-nav-button {
-    font-size: 16px;
-  }
-
-  .project-detail-card h2 {
-    font-size: 26px;
-  }
-
-  .project-desc {
-    font-size: 16px;
-  }
-}
-
+/* 博客侧边栏容器 */
 .blog-sidebar {
   position: relative;
 }
 
+/* 博客侧边栏卡片：flex 列排列 */
 .blog-sidebar-card {
   display: flex;
   flex-direction: column;
 }
 
+/* 博客目录滚动区域 */
 .directory-scroll {
   max-height: 420px;
   overflow-y: auto;
@@ -339,6 +385,7 @@ footer {
   margin-bottom: 20px;
 }
 
+/* 目录滚动条样式 */
 .directory-scroll::-webkit-scrollbar {
   width: 8px;
 }
@@ -348,6 +395,7 @@ footer {
   border-radius: 999px;
 }
 
+/* 博客目录链接（点击跳转到对应文章） */
 .directory-link {
   display: block;
   padding: 12px 14px;
@@ -362,73 +410,14 @@ footer {
   transition: all 0.25s ease;
 }
 
+/* 目录链接悬停效果 */
 .directory-link:hover {
   transform: translateY(-2px);
   background-color: #2c3e50;
   color: white;
 }
 
-.blog-main-card {
-  display: block;
-}
-
-.blog-actions {
-  margin: 20px 0 28px;
-}
-
-.article-section {
-  background-color: rgba(255, 255, 255, 0.88);
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 18px;
-  box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
-  scroll-margin-top: 24px;
-}
-
-.article-section h3 {
-  margin-top: 0;
-  margin-bottom: 8px;
-  color: #2c3e50;
-}
-
-.article-meta {
-  margin-top: 0;
-  margin-bottom: 12px;
-  font-size: 14px;
-  color: #5b6b7a;
-}
-
-.article-section p {
-  line-height: 1.8;
-}
-
-@media (max-width: 960px) {
-  .directory-scroll {
-    max-height: 260px;
-  }
-}
-
-.blog-sidebar-card {
-  display: flex;
-  flex-direction: column;
-}
-
-.directory-scroll {
-  max-height: 420px;
-  overflow-y: auto;
-  padding-right: 8px;
-  margin-bottom: 20px;
-}
-
-.directory-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.directory-scroll::-webkit-scrollbar-thumb {
-  background-color: rgba(44, 62, 80, 0.35);
-  border-radius: 999px;
-}
-
+/* 博客目录按钮（用于切换文章） */
 .directory-button {
   display: block;
   width: 100%;
@@ -446,17 +435,20 @@ footer {
   transition: all 0.25s ease;
 }
 
+/* 目录按钮悬停效果 */
 .directory-button:hover {
   transform: translateY(-2px);
   background-color: #2c3e50;
   color: white;
 }
 
+/* 目录按钮 — 选中状态 */
 .directory-button.active {
   background-color: #2c3e50;
   color: white;
 }
 
+/* 博客侧边栏底部操作按钮区域 */
 .blog-sidebar-actions {
   display: flex;
   flex-direction: column;
@@ -464,22 +456,33 @@ footer {
   margin-top: auto;
 }
 
-.blog-content-area {
-  display: flex;
+/* 博客操作按钮区域（如"返回首页"） */
+.blog-actions {
+  margin: 20px 0 28px;
 }
 
+/* 博客内容区域容器 */
+.blog-content-area {
+  display: flex;
+  min-width: 0;
+}
+
+/* 博客主内容卡片（默认隐藏，通过 .active 显示） */
 .blog-main-card {
   display: none;
   width: 100%;
-  height: 600px;      
-  overflow-y: auto;   
+  height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
 }
 
+/* 博客主内容卡片 — 显示状态 */
 .blog-main-card.active {
   display: block;
 }
 
+/* 博客主内容卡片滚动条样式 */
 .blog-main-card::-webkit-scrollbar {
   width: 8px;
 }
@@ -489,51 +492,65 @@ footer {
   border-radius: 999px;
 }
 
+/* 文章区块容器 */
+.article-section {
+  background-color: rgba(255, 255, 255, 0.88);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 18px rgba(44, 62, 80, 0.08);
+  scroll-margin-top: 24px;
+}
+
+/* 文章区块标题 */
+.article-section h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #2c3e50;
+}
+
+/* 文章元信息（如日期、作者） */
 .article-meta {
   margin-top: 0;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   font-size: 14px;
   color: #5b6b7a;
 }
 
+/* 文章区块段落 */
+.article-section p {
+  line-height: 1.8;
+}
+
+/* 文章内容段落 */
 .article-content p {
   line-height: 1.8;
   margin-bottom: 14px;
 }
 
-@media (max-width: 960px) {
-  .directory-scroll {
-    max-height: 260px;
-  }
-
-  .blog-main-card {
-    height: 460px;
-  }
+/* 防止文章内容溢出容器 */
+.article-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
-.showcase-sidebar-card {
-  display: flex;
-  flex-direction: column;
-}
+/* ============================================================
+   文章内容中的代码样式
+   ============================================================ */
 
-.showcase-sidebar-actions {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
+/* 行内代码 */
 .article-content code {
   background: rgba(44, 62, 80, 0.08);
   padding: 3px 7px;
   border-radius: 6px;
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular",
+  font-family: "Ubuntu Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular",
                "Consolas", "Liberation Mono", "Menlo", monospace;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.7;
 }
 
+/* 代码块容器 */
 .article-content pre {
   background: #111827;
   color: #f8fafc;
@@ -544,12 +561,13 @@ footer {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* 代码块内的代码（覆盖行内代码样式） */
 .article-content pre code {
   display: block;
   background: transparent;
   padding: 0;
   color: inherit;
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular",
+  font-family: "Ubuntu Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", "SFMono-Regular",
                "Consolas", "Liberation Mono", "Menlo", monospace;
   font-size: 15px;
   font-weight: 500;
@@ -558,6 +576,7 @@ footer {
   white-space: pre;
 }
 
+/* 引用块 */
 .article-content blockquote {
   margin: 18px 0;
   padding: 14px 18px;
@@ -567,11 +586,106 @@ footer {
   color: #2c3e50;
 }
 
+/* 引用块内的段落 */
 .article-content blockquote p {
   margin: 0;
   line-height: 1.8;
 }
 
+/* 引用块内的行内代码 */
 .article-content blockquote code {
   background: rgba(44, 62, 80, 0.12);
+}
+
+/* ============================================================
+   Showcase 页面（showcase.html）— 侧边栏
+   ============================================================ */
+
+/* 作品集展示页侧边栏卡片 */
+.showcase-sidebar-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 作品集展示页侧边栏底部操作按钮区域 */
+.showcase-sidebar-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================================
+   响应式布局 — 平板（≤960px）
+   ============================================================ */
+
+@media (max-width: 960px) {
+  /* 作品集布局改为纵向排列 */
+  .portfolio-layout {
+    flex-direction: column;
+  }
+
+  /* 侧边栏和详情区域占满宽度 */
+  .project-sidebar,
+  .project-detail-area {
+    width: 100%;
+  }
+
+  /* 详情网格改为单列 */
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 博客目录滚动区域高度缩小 */
+  .directory-scroll {
+    max-height: 260px;
+  }
+
+  /* 博客主内容卡片高度缩小 */
+  .blog-main-card {
+    height: 460px;
+  }
+}
+
+/* ============================================================
+   响应式布局 — 手机（≤640px）
+   ============================================================ */
+
+@media (max-width: 640px) {
+  /* 头部标题字号缩小 */
+  header h1 {
+    font-size: 30px;
+  }
+
+  /* 导航按钮字号缩小、宽度占满 */
+  .button {
+    font-size: 22px;
+    width: 100%;
+  }
+
+  /* 作品集布局内边距缩小 */
+  .portfolio-layout {
+    padding: 20px 16px 30px;
+  }
+
+  /* 卡片内边距缩小 */
+  .sidebar-card,
+  .project-detail-card {
+    padding: 22px 18px;
+  }
+
+  /* 项目导航按钮字号缩小 */
+  .project-nav-button {
+    font-size: 16px;
+  }
+
+  /* 项目详情标题字号缩小 */
+  .project-detail-card h2 {
+    font-size: 26px;
+  }
+
+  /* 项目描述字号缩小 */
+  .project-desc {
+    font-size: 16px;
+  }
 }
