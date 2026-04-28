@@ -39,288 +39,316 @@
 
   <script>
     // ============================================================
-    // 水波纹物理模拟 — 连续水面效果
+    // 水波纹物理模拟 — 连续水面效果（优化版）
     // ============================================================
 
     const canvas = document.getElementById('ripple-canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas && canvas.getContext('2d');
 
-    // ---- 物理参数 ----
-    const RES = 8;               // 网格分辨率
-    const DAMPING = 0.992;       // 阻尼
-    const BASE_COLOR = '#78c8e8';
-
-    let cols, rows;
-    let current, previous;       // Verlet 双缓冲
-
-    let animId;
-
-    // ---- 点击涟漪光晕数组 ----
-    let clickRipples = [];
-
-    // ---- 自适应尺寸 ----
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      cols = Math.floor(canvas.width / RES) + 2;
-      rows = Math.floor(canvas.height / RES) + 2;
-      const total = cols * rows;
-      current = new Float32Array(total);
-      previous = new Float32Array(total);
+    // 如果 canvas 不可用，静默跳过所有水波逻辑（不报错）
+    if (canvas && ctx) {
+      mainRipple(canvas, ctx);
     }
-    window.addEventListener('resize', resize);
-    resize();
 
-    // ---- 在鼠标/触摸位置产生涟漪 ----
-    // radiusMultiplier: 默认 1（移动），点击时传 2~2.5（大涟漪）
-    function splashAt(x, y, strength, radiusMultiplier = 1) {
-      const col = Math.round(x / RES);
-      const row = Math.round(y / RES);
-      const radius = Math.round(4 * radiusMultiplier);
-      for (let di = -radius; di <= radius; di++) {
-        for (let dj = -radius; dj <= radius; dj++) {
-          const ci = col + di;
-          const rj = row + dj;
-          if (ci >= 1 && ci < cols - 1 && rj >= 1 && rj < rows - 1) {
-            const dist = Math.sqrt(di * di + dj * dj);
-            if (dist <= radius) {
-              const factor = 1 - dist / radius;
-              previous[ci + rj * cols] += strength * factor * factor;
+    function mainRipple(canvas, ctx) {
+      // ---- 物理参数 ----
+      const DAMPING = 0.992;
+
+      // ---- 网格分辨率（根据屏幕自适应） ----
+      // 注意：canvas 尺寸 = window.innerWidth（CSS 像素），
+      // getBoundingClientRect 返回 CSS 像素尺寸，坐标映射 1:1。
+      // 无需换算 devicePixelRatio。
+      let RES = 8;
+      function updateRes() {
+        RES = window.innerWidth < 768 ? 12 : 8;
+      }
+
+      let cols, rows;
+      // 三缓冲 Verlet 方案：
+      // prev = h(t-1), cur = h(t), next = h(t+1)
+      let prev, cur, next;
+
+      // ---- 点击涟漪光晕数组 ----
+      let clickRipples = [];
+
+      // ---- 自适应尺寸 ----
+      function resize() {
+        updateRes();
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        cols = Math.floor(canvas.width / RES) + 2;
+        rows = Math.floor(canvas.height / RES) + 2;
+        const total = cols * rows;
+        prev = new Float32Array(total);
+        cur  = new Float32Array(total);
+        next = new Float32Array(total);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // ---- 在鼠标/触摸位置产生涟漪 ----
+      function splashAt(x, y, strength, radiusMultiplier = 1) {
+        const col = Math.round(x / RES);
+        const row = Math.round(y / RES);
+        const radius = Math.round(4 * radiusMultiplier);
+        for (let di = -radius; di <= radius; di++) {
+          for (let dj = -radius; dj <= radius; dj++) {
+            const ci = col + di;
+            const rj = row + dj;
+            if (ci >= 1 && ci < cols - 1 && rj >= 1 && rj < rows - 1) {
+              const dist = Math.sqrt(di * di + dj * dj);
+              if (dist <= radius) {
+                const factor = 1 - dist / radius;
+                // 写入 cur 缓冲区，作为当前高度位移
+                cur[ci + rj * cols] += strength * factor * factor;
+              }
             }
           }
         }
       }
-    }
 
-    // ---- 鼠标交互（将事件绑定到 document，让 canvas 保持 pointer-events: none） ----
-    let lastMouseX = -9999, lastMouseY = -9999;
+      // ---- 统一指针事件（Pointer Events） ----
+      // canvas 保持 pointer-events: none，事件绑在 document 上
+      let lastPointerX = -9999, lastPointerY = -9999;
 
-    function getCanvasXY(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-
-    document.addEventListener('mousemove', (e) => {
-      const { x, y } = getCanvasXY(e.clientX, e.clientY);
-      // 鼠标移动时产生持续涟漪
-      splashAt(x, y, 0.8);
-      lastMouseX = x;
-      lastMouseY = y;
-    });
-
-    document.addEventListener('mouseleave', () => {
-      lastMouseX = -9999;
-      lastMouseY = -9999;
-    });
-
-    // ---- 点击产生强水波纹 ----
-    document.addEventListener('click', (e) => {
-      const { x, y } = getCanvasXY(e.clientX, e.clientY);
-      // 点击时产生强涟漪：高力度 + 大半径
-      splashAt(x, y, 6.0, 2.5);
-      // 记录光晕动画
-      clickRipples.push({
-        x, y,
-        radius: 0,
-        maxRadius: 60 + Math.random() * 30,
-        life: 1.0
-      });
-    });
-
-    // ---- 触摸支持 ----
-    document.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      const { x, y } = getCanvasXY(touch.clientX, touch.clientY);
-      splashAt(x, y, 1.0);
-    }, { passive: true });
-
-    document.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      const { x, y } = getCanvasXY(touch.clientX, touch.clientY);
-      // 触摸点击也产生强涟漪
-      splashAt(x, y, 6.0, 2.5);
-      clickRipples.push({
-        x, y,
-        radius: 0,
-        maxRadius: 60 + Math.random() * 30,
-        life: 1.0
-      });
-    }, { passive: true });
-
-    // ---- 自动涟漪（让水面始终有波动） ----
-    let autoTimer = 0;
-    function autoSplash() {
-      const x = Math.random() * canvas.width;
-      const y = Math.random() * canvas.height;
-      splashAt(x, y, 0.5 + Math.random() * 0.8);
-    }
-
-    // ---- 波动传播（Verlet 积分） ----
-    function updateWaves() {
-      for (let i = 1; i < cols - 1; i++) {
-        for (let j = 1; j < rows - 1; j++) {
-          const idx = i + j * cols;
-          const laplacian = (
-            previous[(i - 1) + j * cols] +
-            previous[(i + 1) + j * cols] +
-            previous[i + (j - 1) * cols] +
-            previous[i + (j + 1) * cols]
-          ) * 0.5 - previous[idx];
-          current[idx] = laplacian + current[idx];
-          current[idx] *= DAMPING;
-        }
+      function getCanvasXY(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: clientX - rect.left, y: clientY - rect.top };
       }
-      [current, previous] = [previous, current];
-    }
 
-    // ---- 渲染 ----
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.addEventListener('pointerdown', (e) => {
+        const { x, y } = getCanvasXY(e.clientX, e.clientY);
+        splashAt(x, y, 6.0, 2.5);
+        clickRipples.push({
+          x, y,
+          radius: 0,
+          maxRadius: 60 + Math.random() * 30,
+          life: 1.0
+        });
+        lastPointerX = x;
+        lastPointerY = y;
+      });
 
-      // 背景渐变（深邃的水底感）
-      const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      grad.addColorStop(0, '#b0e4f8');
-      grad.addColorStop(0.4, '#78c8e8');
-      grad.addColorStop(1, '#4080b0');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      document.addEventListener('pointermove', (e) => {
+        const { x, y } = getCanvasXY(e.clientX, e.clientY);
+        lastPointerX = x;
+        lastPointerY = y;
+        // 只有鼠标按住拖动（左键）才产生波纹
+        if (e.buttons !== 1) return;
+        splashAt(x, y, 0.8, 1.0);
+      });
 
-      // ---- 绘制连续水面 ----
-      // 用网格绘制四边形，每个格子根据四角波高着色
-      for (let i = 0; i < cols - 1; i++) {
-        for (let j = 0; j < rows - 1; j++) {
-          const h00 = previous[i + j * cols];
-          const h10 = previous[(i + 1) + j * cols];
-          const h01 = previous[i + (j + 1) * cols];
-          const h11 = previous[(i + 1) + (j + 1) * cols];
+      document.addEventListener('pointerup', () => {
+        lastPointerX = -9999;
+        lastPointerY = -9999;
+      });
 
-          const avgH = (h00 + h10 + h01 + h11) * 0.25;
-          const maxH = Math.max(Math.abs(h00), Math.abs(h10), Math.abs(h01), Math.abs(h11));
+      document.addEventListener('pointerleave', () => {
+        lastPointerX = -9999;
+        lastPointerY = -9999;
+      });
 
-          // 高度映射到 -1~1
-          const norm = Math.max(-1, Math.min(1, avgH));
+      document.addEventListener('pointercancel', () => {
+        lastPointerX = -9999;
+        lastPointerY = -9999;
+      });
 
-          // === 色彩计算 ===
-          // 波峰 → 亮白透明；波谷 → 幽蓝深邃
-          const lightness = 55 + norm * 35;   // 20%~90%
-          const sat = 75 - Math.abs(norm) * 35; // 波峰饱和度降低（偏白）
-
-          ctx.fillStyle = `hsl(198, ${sat}%, ${lightness}%)`;
-          ctx.globalAlpha = 0.55 + Math.abs(norm) * 0.35;
-
-          // 绘制四边形（根据波高产生折射偏移，模拟水面起伏）
-          const x = i * RES;
-          const y = j * RES;
-          const shiftScale = 2.5;
-          const shift00 = h00 * shiftScale;
-          const shift10 = h10 * shiftScale;
-          const shift01 = h01 * shiftScale;
-          const shift11 = h11 * shiftScale;
-
-          ctx.beginPath();
-          ctx.moveTo(x + shift00, y + shift00);
-          ctx.lineTo(x + RES + shift10, y + shift10);
-          ctx.lineTo(x + RES + shift11, y + RES + shift11);
-          ctx.lineTo(x + shift01, y + RES + shift01);
-          ctx.closePath();
-          ctx.fill();
-        }
+      // ---- 自动涟漪（让水面始终有波动） ----
+      let autoTimer = 0;
+      function autoSplash() {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        splashAt(x, y, 0.5 + Math.random() * 0.8);
       }
-      ctx.globalAlpha = 1;
 
-      // ---- 高光线：隔行画白色波浪线 ----
-      ctx.strokeStyle = `rgba(255, 255, 255, 0.10)`;
-      ctx.lineWidth = 1.5;
-      for (let j = 1; j < rows; j += 2) {
-        ctx.beginPath();
+      // ---- 波动传播（标准 Verlet 二维水波） ----
+      // 正确公式：newValue = (邻居和 × 0.5 - oldValue) × damping
+      // prev = h(t-1), cur = h(t), next = h(t+1)
+      function updateWaves() {
+        for (let i = 1; i < cols - 1; i++) {
+          for (let j = 1; j < rows - 1; j++) {
+            const idx = i + j * cols;
+            // 从 cur(t) 取邻居，从 prev(t-1) 取旧值
+            const val = (
+              cur[(i - 1) + j * cols] +
+              cur[(i + 1) + j * cols] +
+              cur[i + (j - 1) * cols] +
+              cur[i + (j + 1) * cols]
+            ) * 0.5 - prev[idx];
+            next[idx] = val * DAMPING;
+          }
+        }
+        // 旋转缓冲区：prev ← cur, cur ← next, next 复用旧的 prev（已被清理）
+        const tmp = prev;
+        prev = cur;
+        cur  = next;
+        next = tmp;
+        // 清理「新的 next」边界行，确保不会残留异常值
         for (let i = 0; i < cols; i++) {
-          const h = previous[i + j * cols];
-          const x = i * RES;
-          const y = j * RES + h * 3.5;
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          next[i] = 0;                                          // 上边界
+          next[i + (rows - 1) * cols] = 0;                     // 下边界
         }
-        ctx.stroke();
+        for (let j = 1; j < rows - 1; j++) {
+          next[0 + j * cols] = 0;                               // 左边界
+          next[(cols - 1) + j * cols] = 0;                      // 右边界
+        }
       }
 
-      // ---- 镜面高光：在波峰隆起处画白色光点 ----
-      for (let i = 2; i < cols - 2; i += 2) {
-        for (let j = 2; j < rows - 2; j += 2) {
-          const h = previous[i + j * cols];
-          if (h > 0.3) {
-            const intensity = Math.min(1, h * 0.6);
+      // ---- 渲染 ----
+      function draw() {
+        const isMobile = window.innerWidth < 768;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 背景渐变（深邃的水底感）
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, '#b0e4f8');
+        grad.addColorStop(0.4, '#78c8e8');
+        grad.addColorStop(1, '#4080b0');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // ---- 绘制连续水面（网格四边形） ----
+        for (let i = 0; i < cols - 1; i++) {
+          for (let j = 0; j < rows - 1; j++) {
+            const h00 = cur[i + j * cols];
+            const h10 = cur[(i + 1) + j * cols];
+            const h01 = cur[i + (j + 1) * cols];
+            const h11 = cur[(i + 1) + (j + 1) * cols];
+
+            const avgH = (h00 + h10 + h01 + h11) * 0.25;
+            const norm = Math.max(-1, Math.min(1, avgH));
+
+            // === 增强色彩映射 ===
+            // 波峰 → 亮白；波谷 → 深蓝
+            let lightness, sat;
+            if (norm > 0) {
+              lightness = 55 + norm * 40;    // 55% → 95%
+              sat = 75 - norm * 50;          // 75% → 25%（偏白）
+            } else {
+              lightness = 55 + norm * 30;    // 55% → 25%（变暗）
+              sat = 75 + Math.abs(norm) * 15; // 75% → 90%（更饱和）
+            }
+
+            ctx.fillStyle = `hsl(198, ${sat}%, ${lightness}%)`;
+            ctx.globalAlpha = 0.5 + Math.abs(norm) * 0.4;
+
+            // 折射偏移（波高扭曲顶点，模拟水面起伏）
+            const shiftScale = 3.0;
+            const shift00 = h00 * shiftScale;
+            const shift10 = h10 * shiftScale;
+            const shift01 = h01 * shiftScale;
+            const shift11 = h11 * shiftScale;
+
             const x = i * RES;
-            const y = j * RES + h * 3;
+            const y = j * RES;
+
             ctx.beginPath();
-            ctx.arc(x, y, 2 + intensity * 4, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.4})`;
+            ctx.moveTo(x + shift00, y + shift00);
+            ctx.lineTo(x + RES + shift10, y + shift10);
+            ctx.lineTo(x + RES + shift11, y + RES + shift11);
+            ctx.lineTo(x + shift01, y + RES + shift01);
+            ctx.closePath();
             ctx.fill();
           }
         }
-      }
+        ctx.globalAlpha = 1;
 
-      // ---- 点击涟漪光晕（扩散动画） ----
-      for (let r = clickRipples.length - 1; r >= 0; r--) {
-        const rip = clickRipples[r];
-        rip.radius += (rip.maxRadius - rip.radius) * 0.08;
-        rip.life -= 0.012;
-
-        if (rip.life <= 0) {
-          clickRipples.splice(r, 1);
-          continue;
+        // ---- 波峰白色高光线 ----
+        ctx.strokeStyle = `rgba(255, 255, 255, 0.07)`;
+        ctx.lineWidth = 1.5;
+        for (let j = 1; j < rows; j += 2) {
+          ctx.beginPath();
+          for (let i = 0; i < cols; i++) {
+            const h = cur[i + j * cols];
+            const sx = i * RES;
+            const sy = j * RES + h * 4;
+            if (i === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+          }
+          ctx.stroke();
         }
 
-        // 外圈光晕
-        const grad2 = ctx.createRadialGradient(
-          rip.x, rip.y, 0,
-          rip.x, rip.y, rip.radius
-        );
-        grad2.addColorStop(0, `rgba(255, 255, 255, ${rip.life * 0.25})`);
-        grad2.addColorStop(0.5, `rgba(200, 230, 255, ${rip.life * 0.10})`);
-        grad2.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = grad2;
-        ctx.beginPath();
-        ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
-        ctx.fill();
+        // ---- 镜面高光（波峰光点） ----
+        // 移动端步进更大，绘制更少高光
+        const step = isMobile ? 3 : 2;
+        for (let i = step; i < cols - step; i += step) {
+          for (let j = step; j < rows - step; j += step) {
+            const h = cur[i + j * cols];
+            if (h > 0.25) {
+              const intensity = Math.min(1, h * 0.5);
+              const sx = i * RES + h * 3;
+              const sy = j * RES + h * 3;
+              ctx.beginPath();
+              ctx.arc(sx, sy, 1.5 + intensity * 3, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(255, 255, 255, ${intensity * 0.4})`;
+              ctx.fill();
+            }
+          }
+        }
 
-        // 内圈高光
-        ctx.beginPath();
-        ctx.arc(rip.x, rip.y, rip.radius * 0.15, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${rip.life * 0.3})`;
-        ctx.fill();
+        // ---- 点击涟漪光晕（扩散动画） ----
+        for (let r = clickRipples.length - 1; r >= 0; r--) {
+          const rip = clickRipples[r];
+          rip.radius += (rip.maxRadius - rip.radius) * 0.06;
+          rip.life -= 0.015;
+
+          if (rip.life <= 0) {
+            clickRipples.splice(r, 1);
+            continue;
+          }
+
+          // 外圈光晕
+          const g = ctx.createRadialGradient(
+            rip.x, rip.y, 0,
+            rip.x, rip.y, rip.radius
+          );
+          g.addColorStop(0, `rgba(255, 255, 255, ${rip.life * 0.2})`);
+          g.addColorStop(0.4, `rgba(200, 230, 255, ${rip.life * 0.08})`);
+          g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 内圈亮斑
+          ctx.beginPath();
+          ctx.arc(rip.x, rip.y, rip.radius * 0.12, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${rip.life * 0.25})`;
+          ctx.fill();
+        }
+
+        // ---- 指针位置微弱光晕 ----
+        if (lastPointerX >= 0 && lastPointerY >= 0) {
+          const r = 16;
+          const g = ctx.createRadialGradient(
+            lastPointerX, lastPointerY, 0,
+            lastPointerX, lastPointerY, r
+          );
+          g.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+          g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(lastPointerX, lastPointerY, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
 
-      // ---- 鼠标跟随：在鼠标周围画一圈涟漪高光 ----
-      if (lastMouseX > 0 && lastMouseY > 0) {
-        const r = 18;
-        const grad3 = ctx.createRadialGradient(
-          lastMouseX, lastMouseY, 0,
-          lastMouseX, lastMouseY, r
-        );
-        grad3.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
-        grad3.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = grad3;
-        ctx.beginPath();
-        ctx.arc(lastMouseX, lastMouseY, r, 0, Math.PI * 2);
-        ctx.fill();
+      // ---- 主循环 ----
+      function animate(time) {
+        updateWaves();
+
+        if (!autoTimer || time - autoTimer > 1500) {
+          autoSplash();
+          autoTimer = time;
+        }
+
+        draw();
+        requestAnimationFrame(animate);
       }
+
+      animate(0);
     }
-
-    // ---- 主循环 ----
-    function animate(time) {
-      updateWaves();
-
-      // 每 1.5 秒自动生成一个涟漪
-      if (!autoTimer || time - autoTimer > 1500) {
-        autoSplash();
-        autoTimer = time;
-      }
-
-      draw();
-      animId = requestAnimationFrame(animate);
-    }
-
-    animate(0);
   </script>
 
 </body>

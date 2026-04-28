@@ -7,6 +7,8 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- DOMPurify XSS 防护 -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 </head>
 <body>
 
@@ -129,7 +131,12 @@
       if (!contentBox || !filePath) return;
 
       if (loadedFiles.has(filePath)) {
-        contentBox.innerHTML = loadedFiles.get(filePath);
+        const cached = loadedFiles.get(filePath);
+        if (cached.isHtml) {
+          contentBox.innerHTML = cached.content;
+        } else {
+          contentBox.textContent = cached.content;
+        }
         return;
       }
 
@@ -143,8 +150,17 @@
         const html = marked.parse(text);
         const finalHtml = html || '<p>暂无内容</p>';
 
-        loadedFiles.set(filePath, finalHtml);
-        contentBox.innerHTML = finalHtml;
+        // 使用 DOMPurify 对 markdown 渲染结果做 XSS 过滤
+        // 如果 DOMPurify 加载失败，降级为 textContent 显示 raw markdown，避免 XSS
+        if (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) {
+          const safeHtml = DOMPurify.sanitize(finalHtml);
+          loadedFiles.set(filePath, { content: safeHtml, isHtml: true });
+          contentBox.innerHTML = safeHtml;
+        } else {
+          // 降级：用 textContent 安全显示原始 markdown 文本（不解析 HTML）
+          loadedFiles.set(filePath, { content: text, isHtml: false });
+          contentBox.textContent = text;
+        }
       } catch (error) {
         contentBox.innerHTML = '<p>文章加载失败，请检查文件路径是否正确。</p>';
       }
