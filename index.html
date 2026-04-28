@@ -52,7 +52,7 @@
 
     function mainRipple(canvas, ctx) {
       // ---- 物理参数 ----
-      const DAMPING = 0.992;
+      const DAMPING = 0.988;    // 更大阻尼，波纹消退更快
 
       // ---- 网格分辨率（根据屏幕自适应） ----
       // 注意：canvas 尺寸 = window.innerWidth（CSS 像素），
@@ -118,12 +118,12 @@
 
       document.addEventListener('pointerdown', (e) => {
         const { x, y } = getCanvasXY(e.clientX, e.clientY);
-        splashAt(x, y, 6.0, 2.5);
+        splashAt(x, y, 1.5, 1.2);
         clickRipples.push({
           x, y,
           radius: 0,
-          maxRadius: 60 + Math.random() * 30,
-          life: 1.0
+          maxRadius: 30 + Math.random() * 15,
+          life: 0.8
         });
         lastPointerX = x;
         lastPointerY = y;
@@ -135,7 +135,7 @@
         lastPointerY = y;
         // 只有鼠标按住拖动（左键）才产生波纹
         if (e.buttons !== 1) return;
-        splashAt(x, y, 0.8, 1.0);
+        splashAt(x, y, 0.4, 0.8);
       });
 
       document.addEventListener('pointerup', () => {
@@ -158,7 +158,7 @@
       function autoSplash() {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
-        splashAt(x, y, 0.5 + Math.random() * 0.8);
+        splashAt(x, y, 0.3 + Math.random() * 0.3);
       }
 
       // ---- 波动传播（标准 Verlet 二维水波） ----
@@ -234,7 +234,7 @@
             ctx.globalAlpha = 0.5 + Math.abs(norm) * 0.4;
 
             // 折射偏移（波高扭曲顶点，模拟水面起伏）
-            const shiftScale = 3.0;
+            const shiftScale = 1.5;
             const shift00 = h00 * shiftScale;
             const shift10 = h10 * shiftScale;
             const shift01 = h01 * shiftScale;
