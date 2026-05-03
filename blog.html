@@ -176,11 +176,20 @@
     function addCopyButtons(container) {
       if (!container) return;
 
-      const codeBlocks = container.querySelectorAll("pre");
+      const preBlocks = container.querySelectorAll("pre");
 
-      codeBlocks.forEach(pre => {
-        // 防止重复添加
-        if (pre.querySelector(".copy-button")) return;
+      preBlocks.forEach(pre => {
+        // 获取或创建 wrapper
+        let wrapper = pre.parentElement;
+        if (!wrapper || !wrapper.classList.contains("code-block-wrapper")) {
+          wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+          pre.parentNode.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+        }
+
+        // 防止重复添加复制按钮
+        if (wrapper.querySelector(".copy-button")) return;
 
         const button = document.createElement("button");
         button.className = "copy-button";
@@ -189,12 +198,7 @@
 
         button.addEventListener("click", async () => {
           const code = pre.querySelector("code");
-          // 深拷贝 pre，再移除其中的复制按钮，避免复制到按钮文本
-          const clonedPre = pre.cloneNode(true);
-          const clonedButton = clonedPre.querySelector(".copy-button");
-          if (clonedButton) clonedButton.remove();
-
-          const text = code ? code.innerText : clonedPre.innerText;
+          const text = code ? code.innerText : pre.innerText;
 
           try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -214,7 +218,8 @@
           }, 1500);
         });
 
-        pre.appendChild(button);
+        // 将按钮插入 wrapper 中，放在 pre 前面
+        wrapper.insertBefore(button, pre);
       });
     }
 
