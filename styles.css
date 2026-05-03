@@ -371,6 +371,7 @@ footer {
   position: relative;
   height: calc(100vh - 180px);
   min-height: 0;
+  align-self: flex-start;
 }
 
 /* 博客侧边栏卡片：flex 列排列 */
@@ -379,6 +380,15 @@ footer {
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  overflow: hidden;
+}
+
+.blog-sidebar-card h2 {
+  flex-shrink: 0;
+}
+
+.blog-sidebar-card .sidebar-intro {
+  flex-shrink: 0;
 }
 
 /* 博客目录滚动区域 */
@@ -387,6 +397,7 @@ footer {
   min-height: 0;
   max-height: none;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 8px;
   margin-bottom: 20px;
 }
@@ -460,6 +471,7 @@ footer {
   flex-direction: column;
   gap: 12px;
   margin-top: auto;
+  flex-shrink: 0;
 }
 
 /* 博客操作按钮区域（如"返回首页"） */
@@ -560,7 +572,7 @@ footer {
 .article-content pre {
   background: #111827;
   color: #f8fafc;
-  padding: 18px 20px;
+  padding: 44px 20px 18px;
   border-radius: 12px;
   overflow-x: auto;
   margin-bottom: 18px;
