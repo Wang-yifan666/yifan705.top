@@ -38,14 +38,22 @@
             3. os模块的使用
           </button>
 
+          <button class="directory-button" data-article="post-c++_env" data-file="blogs/build_c++_env.md">
+            4.Windows下构建现代C++环境
+          </button>
+
+          <button class="directory-button" data-article="post-clang-format" data-file="blogs/clangformat_example.md">
+            5.clang—format示例
+          </button>
+
           <button class="directory-button" data-article="post-test" data-file="blogs/test.md">
-            3. test
+            6. test
           </button>
 
           <!-- 新增文章 -->
           <!--
           <button class="directory-button" data-article="post-002" data-file="blogs/dp.md">
-            3.???
+            7.???
           </button>
           -->
         </div>
@@ -89,6 +97,24 @@
         </div>
       </article>
 
+      <article class="project-detail-card blog-main-card" id="post-c++_env">
+        <span class="project-tag">Blog</span>
+        <h2>Windows下构建现代C++环境</h2>
+        <p class="article-meta">分类：教学</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
+      <article class="project-detail-card blog-main-card" id="post-clang-format">
+        <span class="project-tag">Blog</span>
+        <h2>clang—format示例</h2>
+        <p class="article-meta">分类：教学</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
       <article class="project-detail-card blog-main-card" id="post-test">
         <span class="project-tag">Blog</span>
         <h2>test</h2>
@@ -126,6 +152,72 @@
       gfm: true
     });
 
+    /** 复制文本的 fallback 方案 */
+    function copyTextFallback(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      try {
+        document.execCommand("copy");
+        return true;
+      } catch (error) {
+        return false;
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    /** 为代码块添加复制按钮 */
+    function addCopyButtons(container) {
+      if (!container) return;
+
+      const codeBlocks = container.querySelectorAll("pre");
+
+      codeBlocks.forEach(pre => {
+        // 防止重复添加
+        if (pre.querySelector(".copy-button")) return;
+
+        const button = document.createElement("button");
+        button.className = "copy-button";
+        button.type = "button";
+        button.textContent = "复制";
+
+        button.addEventListener("click", async () => {
+          const code = pre.querySelector("code");
+          // 深拷贝 pre，再移除其中的复制按钮，避免复制到按钮文本
+          const clonedPre = pre.cloneNode(true);
+          const clonedButton = clonedPre.querySelector(".copy-button");
+          if (clonedButton) clonedButton.remove();
+
+          const text = code ? code.innerText : clonedPre.innerText;
+
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(text);
+            } else {
+              const ok = copyTextFallback(text);
+              if (!ok) throw new Error("copy failed");
+            }
+
+            button.textContent = "已复制";
+          } catch (error) {
+            button.textContent = "复制失败";
+          }
+
+          setTimeout(() => {
+            button.textContent = "复制";
+          }, 1500);
+        });
+
+        pre.appendChild(button);
+      });
+    }
+
     async function loadArticleFromFile(card, filePath) {
       const contentBox = card.querySelector('[data-content]');
       if (!contentBox || !filePath) return;
@@ -137,6 +229,8 @@
         } else {
           contentBox.textContent = cached.content;
         }
+        // 从缓存加载后也要添加复制按钮
+        addCopyButtons(contentBox);
         return;
       }
 
@@ -161,6 +255,9 @@
           loadedFiles.set(filePath, { content: text, isHtml: false });
           contentBox.textContent = text;
         }
+
+        // 文章内容插入 DOM 后，为所有代码块添加复制按钮
+        addCopyButtons(contentBox);
       } catch (error) {
         contentBox.innerHTML = '<p>文章加载失败，请检查文件路径是否正确。</p>';
       }

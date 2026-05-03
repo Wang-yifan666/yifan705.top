@@ -1,0 +1,317 @@
+# clang-format 配置示例
+
+## 示例：使用 Google 风格
+
+`.clang-format` 示例：
+
+```
+BasedOnStyle: Google
+Language: Cpp
+
+IndentWidth: 4
+ColumnLimit: 100
+PointerAlignment: Left
+
+SortIncludes: false
+ReflowComments: false
+```
+
+其中：
+
+```
+BasedOnStyle: Google
+```
+
+表示以 Google C++ 风格为基础。
+
+如果想换成其他内置风格，可以改成：
+
+```
+BasedOnStyle: LLVM
+```
+
+或：
+
+```
+BasedOnStyle: Microsoft
+```
+
+或：
+
+```
+BasedOnStyle: Chromium
+```
+
+常见内置风格包括：
+
+```text
+LLVM
+Google
+Chromium
+Mozilla
+WebKit
+Microsoft
+GNU
+```
+你可以自己试一试。当然也可以写一份自己喜欢的风格，下面就贴一份我的风格。
+
+---
+
+## 我的 clang-format 配置
+
+```
+---
+Language: Cpp
+
+AccessModifierOffset: -4
+
+AlignAfterOpenBracket: Align
+
+#AlignConsecutiveMacros: Consecutive
+AlignConsecutiveMacros: true
+
+#AlignConsecutiveAssignments: None
+AlignConsecutiveAssignments: false
+
+#AlignConsecutiveDeclarations: None
+AlignConsecutiveDeclarations: false
+
+AlignEscapedNewlines: Left
+
+AlignOperands: false
+
+AlignTrailingComments: true
+
+AllowAllArgumentsOnNextLine: true
+
+AllowAllParametersOfDeclarationOnNextLine: true
+
+AllowShortBlocksOnASingleLine: Empty
+
+AllowShortCaseLabelsOnASingleLine: false
+
+AllowShortFunctionsOnASingleLine: Empty
+
+AllowShortLambdasOnASingleLine: Empty
+
+AllowShortIfStatementsOnASingleLine: Never
+
+AllowShortLoopsOnASingleLine: false
+
+AlwaysBreakAfterReturnType: None
+
+AlwaysBreakBeforeMultilineStrings: false
+
+AlwaysBreakTemplateDeclarations: Yes
+
+BinPackArguments: true
+
+BinPackParameters: true
+
+BraceWrapping:
+    AfterCaseLabel: false
+    AfterClass: true
+    AfterControlStatement: Always
+    AfterEnum: true
+    AfterFunction: true
+    AfterNamespace: true
+    AfterObjCDeclaration: true
+    AfterStruct: true
+    AfterUnion: true
+    AfterExternBlock: true
+    BeforeCatch: true
+    BeforeElse: true
+    IndentBraces: false
+    SplitEmptyFunction: true
+    SplitEmptyRecord: true
+    SplitEmptyNamespace: true
+
+BreakBeforeBinaryOperators: NonAssignment
+
+BreakBeforeBraces: Custom
+
+BreakBeforeInheritanceComma: false
+
+BreakInheritanceList: AfterColon
+
+BreakBeforeTernaryOperators: true
+
+BreakConstructorInitializersBeforeComma: false
+
+BreakConstructorInitializers: AfterColon
+
+BreakAfterJavaFieldAnnotations: false
+
+BreakStringLiterals: false
+
+ColumnLimit: 101
+
+CommentPragmas: '^ IWYU pragma:'
+
+CompactNamespaces: false
+
+ConstructorInitializerIndentWidth: 0
+
+ContinuationIndentWidth: 4
+
+Cpp11BracedListStyle: true
+
+DeriveLineEnding: true
+
+DerivePointerAlignment: true
+
+DisableFormat: false
+
+FixNamespaceComments: true
+
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+
+IncludeBlocks: Regroup
+
+IncludeCategories:
+  - Regex: '^<ext/.*\.h>'
+    Priority: 2
+    SortPriority: 0
+  - Regex: '^<.*\.h>'
+    Priority: 1
+    SortPriority: 0
+  - Regex: '^<.*'
+    Priority: 2
+    SortPriority: 0
+  - Regex: '.*'
+    Priority: 3
+    SortPriority: 0
+
+IncludeIsMainRegex: '([-_](test|unittest))?$'
+
+IncludeIsMainSourceRegex: ''
+
+IndentCaseLabels: false
+
+IndentGotoLabels: false
+
+IndentPPDirectives: None
+
+IndentWidth: 4
+
+IndentWrappedFunctionNames: 
+
+KeepEmptyLinesAtTheStartOfBlocks: true
+
+MacroBlockBegin: ''
+
+MacroBlockEnd: ''
+
+MaxEmptyLinesToKeep: 2
+
+NamespaceIndentation: None
+
+PenaltyBreakAssignment: 2
+
+PenaltyBreakBeforeFirstCallParameter: 1
+
+PenaltyBreakComment: 300
+
+PenaltyBreakFirstLessLess: 120
+
+PenaltyBreakString: 1000
+
+PenaltyBreakTemplateDeclaration: 10
+
+PenaltyExcessCharacter: 1000000
+
+PenaltyReturnTypeOnItsOwnLine: 200
+
+PointerAlignment: Left
+
+RawStringFormats:
+  - Language: Cpp
+    Delimiters:
+      - cc
+      - CC
+      - cpp
+      - Cpp
+      - CPP
+      - 'c++'
+      - 'C++'
+    CanonicalDelimiter: ''
+    BasedOnStyle: google
+  - Language: TextProto
+    Delimiters:
+      - pb
+      - PB
+      - proto
+      - PROTO
+    EnclosingFunctions:
+      - EqualsProto
+      - EquivToProto
+      - PARSE_PARTIAL_TEXT_PROTO
+      - PARSE_TEST_PROTO
+      - PARSE_TEXT_PROTO
+      - ParseTextOrDie
+      - ParseTextProtoOrDie
+    CanonicalDelimiter: ''
+    BasedOnStyle: google
+
+ReflowComments: false
+
+#SortIncludes: Never
+SortIncludes: false
+
+SortUsingDeclarations: true
+
+SpaceAfterCStyleCast: false
+
+SpaceAfterLogicalNot: false
+
+SpaceAfterTemplateKeyword: false
+
+SpaceBeforeAssignmentOperators: true
+
+SpaceBeforeCpp11BracedList: false
+
+SpaceBeforeCtorInitializerColon: false
+
+SpaceBeforeInheritanceColon: false
+
+SpaceBeforeParens: Never
+
+SpaceBeforeRangeBasedForLoopColon: false
+
+SpaceInEmptyBlock: false
+
+SpaceInEmptyParentheses: false
+
+SpacesBeforeTrailingComments: 1
+
+SpacesInAngles: false
+
+SpacesInConditionalStatement: false
+
+SpacesInContainerLiterals: false
+
+SpacesInCStyleCastParentheses: false
+
+SpacesInParentheses: false
+
+SpacesInSquareBrackets: false
+
+SpaceBeforeSquareBrackets: false
+
+Standard: Auto
+
+StatementMacros:
+  - Q_UNUSED
+  - QT_REQUIRE_VERSION
+
+TabWidth: 4
+
+UseCRLF: false
+
+UseTab: ForIndentation
+```
+
+---

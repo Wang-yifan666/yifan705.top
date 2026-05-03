@@ -369,17 +369,23 @@ footer {
 /* 博客侧边栏容器 */
 .blog-sidebar {
   position: relative;
+  height: calc(100vh - 180px);
+  min-height: 0;
 }
 
 /* 博客侧边栏卡片：flex 列排列 */
 .blog-sidebar-card {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 /* 博客目录滚动区域 */
 .directory-scroll {
-  max-height: 420px;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   padding-right: 8px;
   margin-bottom: 20px;
@@ -559,6 +565,30 @@ footer {
   overflow-x: auto;
   margin-bottom: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+/* 代码块复制按钮 */
+.copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #9ca3af;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+  line-height: 1.5;
+}
+
+.copy-button:hover {
+  color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.18);
 }
 
 /* 代码块内的代码（覆盖行内代码样式） */
@@ -636,8 +666,14 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  /* 博客侧边栏在响应式下恢复自动高度 */
+  .blog-sidebar {
+    height: auto;
+  }
+
   /* 博客目录滚动区域高度缩小 */
   .directory-scroll {
+    flex: none;
     max-height: 260px;
   }
 
