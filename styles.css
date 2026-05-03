@@ -366,10 +366,16 @@ footer {
    博客页面（blog.html）— 侧边栏目录 + 文章内容
    ============================================================ */
 
+/* 博客布局覆盖父容器的 stretch 对齐 */
+.blog-layout {
+  align-items: flex-start;
+}
+
 /* 博客侧边栏容器 */
 .blog-sidebar {
-  position: relative;
-  height: calc(100vh - 180px);
+  position: sticky;
+  top: 20px;
+  height: calc(100vh - 40px);
   min-height: 0;
   align-self: flex-start;
 }
@@ -379,21 +385,22 @@ footer {
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 100%;
   min-height: 0;
   overflow: hidden;
 }
 
 .blog-sidebar-card h2 {
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .blog-sidebar-card .sidebar-intro {
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 /* 博客目录滚动区域 */
 .directory-scroll {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
   max-height: none;
   overflow-y: auto;
@@ -471,7 +478,7 @@ footer {
   flex-direction: column;
   gap: 12px;
   margin-top: auto;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 /* 博客操作按钮区域（如"返回首页"） */
@@ -680,6 +687,7 @@ footer {
 
   /* 博客侧边栏在响应式下恢复自动高度 */
   .blog-sidebar {
+    position: static;
     height: auto;
   }
 
