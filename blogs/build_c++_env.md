@@ -340,6 +340,8 @@ target_link_libraries(demo PRIVATE ${OpenCV_LIBS})
 
 写完后在c++文件页面右键会出现格式化，只要点击即可。
 
+---
+
 ### 5. 编写 `CMakePresets.json`
 
 ```json
