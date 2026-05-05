@@ -6,9 +6,12 @@
   <title>博客</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="styles.css">
+  <!-- highlight.js 语法高亮 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- DOMPurify XSS 防护 -->
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
 
@@ -172,6 +175,65 @@
       }
     }
 
+    /** 对容器内的所有代码块应用 highlight.js 语法高亮 */
+    function applyHighlighting(container) {
+      if (!container) return;
+      container.querySelectorAll('pre code').forEach(block => {
+        // 跳过已高亮的代码块（highlight.js 会加上 hljs class）
+        if (block.classList.contains('hljs')) return;
+        hljs.highlightElement(block);
+      });
+    }
+
+    /** 为代码块添加行号（基于 innerHTML，不破坏 highlight.js 的 span） */
+    function addLineNumbers(container) {
+      if (!container) return;
+
+      const codeBlocks = container.querySelectorAll("pre code");
+
+      codeBlocks.forEach(code => {
+        // 避免重复处理
+        if (code.dataset.lineNumbers === "true") return;
+
+        // 保存原始纯文本，供复制按钮使用（不含行号和高亮标签）
+        code.dataset.rawCode = code.textContent;
+
+        // === 基于 innerHTML 分行，保留 highlight.js 生成的 span ===
+        const rawHTML = code.innerHTML;
+        const htmlLines = rawHTML.split("\n");
+        // 去掉末尾空行（如果最后一个字符是换行符导致）
+        if (htmlLines.length > 0 && htmlLines[htmlLines.length - 1].trim() === "") {
+          htmlLines.pop();
+        }
+
+        // 用 DocumentFragment 批量构建
+        const fragment = document.createDocumentFragment();
+
+        htmlLines.forEach((htmlLine, index) => {
+          const lineSpan = document.createElement("span");
+          lineSpan.className = "code-line";
+
+          const numSpan = document.createElement("span");
+          numSpan.className = "line-number";
+          numSpan.textContent = String(index + 1);
+
+          const contentSpan = document.createElement("span");
+          contentSpan.className = "line-content";
+          // 使用 innerHTML 保留 highlight.js 的高亮标签
+          contentSpan.innerHTML = htmlLine || " ";
+
+          lineSpan.appendChild(numSpan);
+          lineSpan.appendChild(contentSpan);
+          fragment.appendChild(lineSpan);
+        });
+
+        // 清空并插入新 DOM
+        code.innerHTML = "";
+        code.appendChild(fragment);
+        code.dataset.lineNumbers = "true";
+      });
+    }
+
     /** 为代码块添加复制按钮 */
     function addCopyButtons(container) {
       if (!container) return;
@@ -198,7 +260,8 @@
 
         button.addEventListener("click", async () => {
           const code = pre.querySelector("code");
-          const text = code ? code.innerText : pre.innerText;
+          // 优先使用 dataset.rawCode（不含行号），否则回退到 innerText
+          const text = code && code.dataset.rawCode ? code.dataset.rawCode : (code ? code.innerText : pre.innerText);
 
           try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -234,7 +297,9 @@
         } else {
           contentBox.textContent = cached.content;
         }
-        // 从缓存加载后也要添加复制按钮
+        // 从缓存加载后：高亮 → 行号 → 复制按钮
+        applyHighlighting(contentBox);
+        addLineNumbers(contentBox);
         addCopyButtons(contentBox);
         return;
       }
@@ -261,8 +326,11 @@
           contentBox.textContent = text;
         }
 
-        // 文章内容插入 DOM 后，为所有代码块添加复制按钮
+        // ✅ 执行顺序：1 语法高亮 → 2 行号 → 3 复制按钮
+        applyHighlighting(contentBox);
+        addLineNumbers(contentBox);
         addCopyButtons(contentBox);
+
       } catch (error) {
         contentBox.innerHTML = '<p>文章加载失败，请检查文件路径是否正确。</p>';
       }

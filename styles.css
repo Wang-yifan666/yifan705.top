@@ -629,6 +629,34 @@ footer {
   white-space: pre;
 }
 
+/* 代码行（行号 + 内容） */
+.code-line {
+  display: flex;
+}
+
+/* 鼠标 hover 到某一行时，该行背景轻微高亮 */
+.code-line:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 行号数字 */
+.line-number {
+  width: 3em;
+  text-align: right;
+  padding-right: 10px;
+  margin-right: 10px;
+  color: #6b7280;
+  user-select: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* 行内容 */
+.line-content {
+  flex: 1;
+  min-width: max-content;
+}
+
 /* 引用块 */
 .article-content blockquote {
   margin: 18px 0;
