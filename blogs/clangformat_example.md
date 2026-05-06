@@ -197,7 +197,7 @@ IndentPPDirectives: None
 
 IndentWidth: 4
 
-IndentWrappedFunctionNames: 
+IndentWrappedFunctionNames: false
 
 KeepEmptyLinesAtTheStartOfBlocks: true
 
