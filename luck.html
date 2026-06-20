@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日运势</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- 水波纹画布背景 -->
+  <canvas id="ripple-canvas"></canvas>
+
+  <header>
+    <h1>今日运势</h1>
+  </header>
+
+  <main class="subpage-content luck-content" aria-labelledby="luck-title">
+    <section class="luck-card" aria-live="polite">
+      <span class="project-tag">Daily Luck</span>
+      <h2 id="luck-title">今天会发生什么？</h2>
+
+      <p class="luck-date">
+        当前日期：<time id="luck-date" datetime="">加载中</time>
+      </p>
+
+      <div class="luck-summary">
+        <p class="luck-level-label">运势等级</p>
+        <p id="luck-level" class="luck-level">加载中</p>
+      </div>
+
+      <div class="luck-grid">
+        <article class="luck-box">
+          <h3>宜</h3>
+          <ul id="luck-good" class="luck-list"></ul>
+        </article>
+
+        <article class="luck-box">
+          <h3>忌</h3>
+          <ul id="luck-bad" class="luck-list"></ul>
+        </article>
+      </div>
+
+      <p class="luck-number">
+        幸运数字：<span id="luck-number">加载中</span>
+      </p>
+
+      <div class="luck-actions">
+        <button id="luck-regenerate" class="button small-button luck-action-button" type="button">
+          重新占卜
+        </button>
+        <a href="index.html" class="button small-button luck-home-link">
+          返回首页
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 yifan. All rights reserved.</p>
+  </footer>
+
+  <script src="ripple.js"></script>
+  <script src="luck-config.js"></script>
+  <script src="luck.js"></script>
+</body>
+</html>

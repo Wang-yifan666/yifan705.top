@@ -49,8 +49,12 @@
             5.clang—format示例
           </button>
 
+          <button class="directory-button" data-article="post-git-push" data-file="blogs/git_push.md">
+            6. git 的约定式提交
+          </button>
+
           <button class="directory-button" data-article="post-test" data-file="blogs/test.md">
-            6. test
+            7. test
           </button>
 
           <!-- 新增文章 -->
@@ -118,6 +122,15 @@
         </div>
       </article>
 
+      <article class="project-detail-card blog-main-card" id="post-git-push">
+        <span class="project-tag">Blog</span>
+        <h2>git 的约定式提交</h2>
+        <p class="article-meta">分类：Git</p>
+        <div class="article-content" data-content>
+          <p>文章加载中...</p>
+        </div>
+      </article>
+
       <article class="project-detail-card blog-main-card" id="post-test">
         <span class="project-tag">Blog</span>
         <h2>test</h2>
@@ -173,6 +186,14 @@
       } finally {
         document.body.removeChild(textarea);
       }
+    }
+
+    /** 清理代码块末尾空行，避免多生成空白行号 */
+    function trimCodeBlockTrailingBlankLines(container) {
+      if (!container) return;
+      container.querySelectorAll('pre code').forEach(block => {
+        block.textContent = block.textContent.replace(/\n+$/g, '');
+      });
     }
 
     /** 对容器内的所有代码块应用 highlight.js 语法高亮 */
@@ -298,6 +319,7 @@
           contentBox.textContent = cached.content;
         }
         // 从缓存加载后：高亮 → 行号 → 复制按钮
+        trimCodeBlockTrailingBlankLines(contentBox);
         applyHighlighting(contentBox);
         addLineNumbers(contentBox);
         addCopyButtons(contentBox);
@@ -327,6 +349,7 @@
         }
 
         // ✅ 执行顺序：1 语法高亮 → 2 行号 → 3 复制按钮
+        trimCodeBlockTrailingBlankLines(contentBox);
         applyHighlighting(contentBox);
         addLineNumbers(contentBox);
         addCopyButtons(contentBox);

@@ -1,0 +1,63 @@
+const LUCK_CONFIG = {
+  levels: [
+    "大吉",
+    "中吉",
+    "小吉",
+    "末吉",
+    "平",
+    "小凶",
+    "中凶",
+    "大凶",
+  ],
+  events: [
+    "吃饭",
+    "玩游戏",
+    "看动漫",
+    "考试",
+    "写代码",
+    "刷算法题",
+    "整理博客",
+    "提交 GitHub",
+    "学习新知识",
+    "重构旧项目",
+    "读技术文档",
+    "熬夜 Debug",
+    "CV工程师",
+    "提交代码",
+    "不写注释",
+    "边吃饭边改 bug",
+    "打开电脑",
+    "校园跑",
+    "散步",
+    "开会",
+    "摸鱼",
+
+    // 新增普通事件：直接在这里追加字符串，例如：
+    // "早睡早起",
+  ],
+  counts: {
+    good: { min: 1, max: 3 },
+    bad: { min: 1, max: 2 },
+  },
+  luckyNumber: { min: 1, max: 99 },
+  specialEvents: [
+    {
+      name: "星期四疯狂加成",
+      event: "疯狂星期四",
+      bonusCount: 10,
+      when: ({ dayOfWeek }) => dayOfWeek === 4,
+    },
+    {
+      name: "leetcode周赛加成",
+      event: "leetcode周赛",
+      bonusCount: 5,
+      when: ({ dayOfWeek }) => dayOfWeek === 7,
+    },
+    // {
+    //   name: "春节加成",
+    //   event: "吃饺子",
+    //   bonusCount: 5,
+    //   when: ({ dateString }) => dateString.endsWith("-02-10"),
+    // },
+  ],
+};
