@@ -1,5 +1,3 @@
-let redrawCount = 0;
-
 function padDatePart(value) {
   return String(value).padStart(2, "0");
 }
@@ -15,37 +13,27 @@ function getLocalDateInfo(date) {
   };
 }
 
-function createSeedFromString(text) {
-  let seed = 0;
+function getRandomFraction() {
+  const cryptoSource = window.crypto || window.msCrypto;
 
-  for (let index = 0; index < text.length; index += 1) {
-    seed = (seed * 31 + text.charCodeAt(index)) >>> 0;
+  if (cryptoSource && typeof cryptoSource.getRandomValues === "function") {
+    const randomValues = new Uint32Array(1);
+    cryptoSource.getRandomValues(randomValues);
+    return randomValues[0] / 4294967296;
   }
 
-  return seed || 1;
+  return Math.random();
 }
 
-function createSeededRandom(seed) {
-  let state = seed >>> 0;
-
-  return function random() {
-    state = (state + 0x6D2B79F5) >>> 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
+function getRandomInt(min, max) {
+  return Math.floor(getRandomFraction() * (max - min + 1)) + min;
 }
 
-function getRandomInt(random, min, max) {
-  return Math.floor(random() * (max - min + 1)) + min;
-}
-
-function shuffleItems(items, random) {
+function shuffleItems(items) {
   const result = [...items];
 
   for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = getRandomInt(random, 0, index);
+    const swapIndex = getRandomInt(0, index);
     [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
   }
 
@@ -103,32 +91,24 @@ function getUniqueLeadingEvents(events, count) {
   return result;
 }
 
-function createLuckSeed(dateString, variant) {
-  return createSeedFromString(`${dateString}#${variant}`);
-}
-
-function generateDailyLuck(date = new Date(), variant = 0) {
+function generateDailyLuck(date = new Date()) {
   const dateInfo = getLocalDateInfo(date);
   const activeSpecialEvents = getActiveSpecialEvents(dateInfo);
-  const random = createSeededRandom(createLuckSeed(dateInfo.dateString, variant));
   const eventPool = createEventPool(activeSpecialEvents);
-  const shuffledEvents = shuffleItems(eventPool, random);
-  const level = LUCK_CONFIG.levels[getRandomInt(random, 0, LUCK_CONFIG.levels.length - 1)];
+  const shuffledEvents = shuffleItems(eventPool);
+  const level = LUCK_CONFIG.levels[getRandomInt(0, LUCK_CONFIG.levels.length - 1)];
   const goodCount = getRandomInt(
-    random,
     LUCK_CONFIG.counts.good.min,
     Math.min(LUCK_CONFIG.counts.good.max, eventPool.length - 1)
   );
   const goodList = getUniqueLeadingEvents(shuffledEvents, goodCount);
   const remainingEvents = getUniqueRemainingEvents(shuffledEvents, goodList);
   const badCount = getRandomInt(
-    random,
     LUCK_CONFIG.counts.bad.min,
     Math.min(LUCK_CONFIG.counts.bad.max, remainingEvents.length)
   );
-  const badList = shuffleItems(remainingEvents, random).slice(0, badCount);
+  const badList = shuffleItems(remainingEvents).slice(0, badCount);
   const luckyNumber = getRandomInt(
-    random,
     LUCK_CONFIG.luckyNumber.min,
     LUCK_CONFIG.luckyNumber.max
   );
@@ -153,7 +133,7 @@ function renderList(element, items) {
 }
 
 function renderDailyLuck() {
-  const luck = generateDailyLuck(new Date(), redrawCount);
+  const luck = generateDailyLuck(new Date());
   const dateElement = document.getElementById("luck-date");
 
   dateElement.dateTime = luck.dateString;
@@ -168,7 +148,6 @@ function bindRegenerateButton() {
   const regenerateButton = document.getElementById("luck-regenerate");
 
   regenerateButton.addEventListener("click", () => {
-    redrawCount += 1;
     renderDailyLuck();
   });
 }

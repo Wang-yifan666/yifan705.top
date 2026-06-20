@@ -51,7 +51,7 @@ const LUCK_CONFIG = {
       name: "leetcode周赛加成",
       event: "leetcode周赛",
       bonusCount: 5,
-      when: ({ dayOfWeek }) => dayOfWeek === 7,
+      when: ({ dayOfWeek }) => dayOfWeek === 0,
     },
     // {
     //   name: "春节加成",
