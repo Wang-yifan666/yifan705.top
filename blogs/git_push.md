@@ -24,5 +24,6 @@
 
 ## 提交示例
 ```
-git commit -m"feat:增加了新功能"
+git commit -m "feat: 增加了新功能"
+git commit -m "docs: 更新项目说明文档"
 ```
