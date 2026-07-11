@@ -7,51 +7,234 @@
   'use strict';
 
   const canvas = document.getElementById('ripple-canvas');
-  const ctx = canvas && canvas.getContext('2d');
+  const mainCtx = canvas && canvas.getContext('2d');
 
-  if (!canvas || !ctx) return;
+  if (!canvas || !mainCtx) return;
 
-  // ---- 物理参数 ----
-  const DAMPING = 0.988;    // 更大阻尼，波纹消退更快
+  // ==========================================================
+  // 集中配置参数
+  // ==========================================================
+  const CONFIG = {
+    // ---- 物理参数 ----
+    damping: 0.988,
 
-  // ---- 网格分辨率（根据屏幕自适应） ----
-  // 注意：canvas 尺寸 = window.innerWidth（CSS 像素），
-  // getBoundingClientRect 返回 CSS 像素尺寸，坐标映射 1:1。
-  // 无需换算 devicePixelRatio。
-  let RES = 8;
-  function updateRes() {
-    RES = window.innerWidth < 768 ? 12 : 8;
+    // ---- 网格分辨率（CSS 像素单位） ----
+    desktopRes: 8,
+    mobileRes: 12,
+    mobileBreakpoint: 768,
+
+    // ---- 渲染 ----
+    desktopRenderScale: 2,
+    mobileRenderScale: 2,
+    maxDpr: 1.5,
+
+    // ---- splashAt 基础半径 ----
+    splashBaseRadius: 4,
+
+    // ---- 输入：点击 ----
+    clickStrength: 1.2,
+    clickRadiusMultiplier: 1.1,
+
+    // ---- 输入：拖动 ----
+    dragStrength: 0.25,
+    dragRadiusMultiplier: 0.6,
+    dragTimeThrottle: 30,       // ms
+    dragDistThrottle: 12,       // CSS 像素
+
+    // ---- 自动扰动 ----
+    autoRippleMinInterval: 1200,    // ms
+    autoRippleIntervalRange: 2600,  // ms
+    autoRippleStrengthMin: 0.08,
+    autoRippleStrengthMax: 0.22,
+    // 移动端（覆盖）
+    mobileAutoRippleMinInterval: 5000,
+    mobileAutoRippleIntervalRange: 3000,
+    mobileAutoRippleStrengthMin: 0.04,
+    mobileAutoRippleStrengthMax: 0.12,
+
+    // ---- 光照 ----
+    lightX: 0.35,
+    lightY: -0.25,
+    lightZ: 0.90,
+    normalStrength: 2.0,
+    ambientLight: 0.32,
+    diffuseStrength: 0.68,
+
+    // ---- 背景渐变 ----
+    gradientTop: '#b0e4f8',
+    gradientMid: '#78c8e8',
+    gradientBottom: '#4080b0',
+
+    // ---- 基础水色（RGB，用于静态背景 / 着色基色） ----
+    waterR: 86,
+    waterG: 155,
+    waterB: 184,
+
+    // ---- 时间步进 ----
+    fixedStep: 1 / 60,
+    maxDelta: 0.1,
+    maxStepsPerFrame: 6,
+
+    // ---- resize 防抖 ----
+    resizeDebounce: 150     // ms
+  };
+
+  // ---- 预计算光照方向 ----
+  const lightLen = Math.sqrt(
+    CONFIG.lightX * CONFIG.lightX +
+    CONFIG.lightY * CONFIG.lightY +
+    CONFIG.lightZ * CONFIG.lightZ
+  );
+  const lightNormX = CONFIG.lightX / lightLen;
+  const lightNormY = CONFIG.lightY / lightLen;
+  const lightNormZ = CONFIG.lightZ / lightLen;
+
+  // ==========================================================
+  // 尺寸系统（四种尺寸独立管理）
+  // ==========================================================
+  let cssW, cssH;          // 尺寸 1：CSS 显示尺寸
+  let canvasW, canvasH;    // 尺寸 2：主 Canvas 设备像素尺寸
+  let dpr;                 // 设备像素比（≤ maxDpr）
+  let cols, rows;          // 尺寸 3：模拟网格尺寸（CSS 像素单位）
+  let bufferW, bufferH;    // 尺寸 4：低分辨率着色缓冲尺寸
+  let renderScale;         // 着色缓冲比例
+  let RES;                 // 物理网格分辨率（CSS 像素单位）
+  let isMobile;            // 是否移动端
+
+  // 离屏 Canvas
+  let offCanvas;
+  let offCtx;
+
+  // 模拟缓冲（三缓冲 + 梯度，仅 resize 时分配）
+  let prev, cur, next;
+  let gradientX, gradientY;
+
+  // ImageData 复用
+  let imageData;
+
+  // ==========================================================
+  // 动画状态
+  // ==========================================================
+  let animationId = null;
+  let lastTimestamp = 0;
+  let accumulator = 0;
+  let paused = false;          // visibility 暂停
+  let reducedMotion = false;   // prefers-reduced-motion
+
+  // ==========================================================
+  // 输入状态
+  // ==========================================================
+  let activePointerId = null;    // 当前拖动指针 ID（鼠标/触控笔）
+  let isDragging = false;
+  let lastDragTime = 0;
+  let lastDragSplashX = -1;
+  let lastDragSplashY = -1;
+
+  // ==========================================================
+  // 自动扰动状态
+  // ==========================================================
+  let nextAutoRippleTime = 0;  // 下一次自动扰动的时间戳（ms）
+
+  // ==========================================================
+  // 尺寸初始化
+  // ==========================================================
+  function updateAllSizes() {
+    cssW = window.innerWidth;
+    cssH = window.innerHeight;
+
+    dpr = Math.min(window.devicePixelRatio || 1, CONFIG.maxDpr);
+
+    canvasW = Math.round(cssW * dpr);
+    canvasH = Math.round(cssH * dpr);
+
+    isMobile = cssW < CONFIG.mobileBreakpoint;
+    RES = isMobile ? CONFIG.mobileRes : CONFIG.desktopRes;
+    renderScale = isMobile ? CONFIG.mobileRenderScale : CONFIG.desktopRenderScale;
+
+    cols = Math.floor(cssW / RES) + 2;
+    rows = Math.floor(cssH / RES) + 2;
+
+    bufferW = (cols - 2) * renderScale;
+    bufferH = (rows - 2) * renderScale;
   }
 
-  let cols, rows;
-  // 三缓冲 Verlet 方案：
-  // prev = h(t-1), cur = h(t), next = h(t+1)
-  let prev, cur, next;
+  function setupCanvases() {
+    updateAllSizes();
 
-  // ---- 点击涟漪光晕数组 ----
-  let clickRipples = [];
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
 
-  // ---- 自适应尺寸 ----
-  function resize() {
-    updateRes();
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    cols = Math.floor(canvas.width / RES) + 2;
-    rows = Math.floor(canvas.height / RES) + 2;
+    // 每次设置 width/height 后必须重设 transform
+    mainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mainCtx.imageSmoothingEnabled = true;
+
+    if (bufferW > 0 && bufferH > 0) {
+      offCanvas = document.createElement('canvas');
+      offCanvas.width = bufferW;
+      offCanvas.height = bufferH;
+      offCtx = offCanvas.getContext('2d');
+      imageData = offCtx.createImageData(bufferW, bufferH);
+    }
+  }
+
+  function setupSimBuffers() {
     const total = cols * rows;
     prev = new Float32Array(total);
     cur  = new Float32Array(total);
     next = new Float32Array(total);
+    gradientX = new Float32Array(total);
+    gradientY = new Float32Array(total);
   }
-  window.addEventListener('resize', resize);
-  resize();
 
-  // ---- 在鼠标/触摸位置产生涟漪 ----
+  // ---- Resize（带防抖）----
+  let resizeTimeout = null;
+  function onResize() {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(handleResize, CONFIG.resizeDebounce);
+  }
+
+  function handleResize() {
+    setupCanvases();
+    setupSimBuffers();
+    resetTimestamps();
+  }
+
+  window.addEventListener('resize', onResize);
+  handleResize(); // 初始设置
+
+  // ==========================================================
+  // 双线性采样
+  // ==========================================================
+  function sampleBilinear(arr, gx, gy) {
+    let ix = Math.floor(gx);
+    let iy = Math.floor(gy);
+    const fx = gx - ix;
+    const fy = gy - iy;
+
+    ix = Math.max(0, Math.min(cols - 2, ix));
+    iy = Math.max(0, Math.min(rows - 2, iy));
+    const ix1 = Math.min(ix + 1, cols - 1);
+    const iy1 = Math.min(iy + 1, rows - 1);
+
+    const a = arr[ix + iy * cols];
+    const b = arr[ix1 + iy * cols];
+    const c = arr[ix + iy1 * cols];
+    const d = arr[ix1 + iy1 * cols];
+
+    return (1 - fy) * ((1 - fx) * a + fx * b) +
+           fy * ((1 - fx) * c + fx * d);
+  }
+
+  // ==========================================================
+  // splashAt — 写入 cur 缓冲（CSS 像素坐标）
+  // ==========================================================
   function splashAt(x, y, strength, radiusMultiplier) {
     if (radiusMultiplier === undefined) radiusMultiplier = 1;
     const col = Math.round(x / RES);
     const row = Math.round(y / RES);
-    const radius = Math.round(4 * radiusMultiplier);
+    const radius = Math.round(CONFIG.splashBaseRadius * radiusMultiplier);
     for (let di = -radius; di <= radius; di++) {
       for (let dj = -radius; dj <= radius; dj++) {
         const ci = col + di;
@@ -60,7 +243,6 @@
           const dist = Math.sqrt(di * di + dj * dj);
           if (dist <= radius) {
             const factor = 1 - dist / radius;
-            // 写入 cur 缓冲区，作为当前高度位移
             cur[ci + rj * cols] += strength * factor * factor;
           }
         }
@@ -68,245 +250,393 @@
     }
   }
 
-  // ---- 统一指针事件（Pointer Events） ----
-  // canvas 保持 pointer-events: none，事件绑在 document 上
-  let lastPointerX = -9999, lastPointerY = -9999;
-
+  // ==========================================================
+  // 坐标转换（client → CSS 像素）
+  // ==========================================================
   function getCanvasXY(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
-  document.addEventListener('pointerdown', function (e) {
-    const xy = getCanvasXY(e.clientX, e.clientY);
-    splashAt(xy.x, xy.y, 1.5, 1.2);
-    clickRipples.push({
-      x: xy.x, y: xy.y,
-      radius: 0,
-      maxRadius: 30 + Math.random() * 15,
-      life: 0.8
-    });
-    lastPointerX = xy.x;
-    lastPointerY = xy.y;
-  });
-
-  document.addEventListener('pointermove', function (e) {
-    const xy = getCanvasXY(e.clientX, e.clientY);
-    lastPointerX = xy.x;
-    lastPointerY = xy.y;
-    // 只有鼠标按住拖动（左键）才产生波纹
-    if (e.buttons !== 1) return;
-    splashAt(xy.x, xy.y, 0.4, 0.8);
-  });
-
-  document.addEventListener('pointerup', function () {
-    lastPointerX = -9999;
-    lastPointerY = -9999;
-  });
-
-  document.addEventListener('pointerleave', function () {
-    lastPointerX = -9999;
-    lastPointerY = -9999;
-  });
-
-  document.addEventListener('pointercancel', function () {
-    lastPointerX = -9999;
-    lastPointerY = -9999;
-  });
-
-  // ---- 自动涟漪（让水面始终有波动） ----
-  let autoTimer = 0;
-  function autoSplash() {
-    var x = Math.random() * canvas.width;
-    var y = Math.random() * canvas.height;
-    splashAt(x, y, 0.3 + Math.random() * 0.3);
+  // ==========================================================
+  // 检查目标是否为可交互元素
+  // ==========================================================
+  function isInteractiveElement(target) {
+    return target.closest('a, button, input, textarea, select, summary, [role="button"]') !== null;
   }
 
-  // ---- 波动传播（标准 Verlet 二维水波） ----
-  // 正确公式：newValue = (邻居和 × 0.5 - oldValue) × damping
-  // prev = h(t-1), cur = h(t), next = h(t+1)
+  // ==========================================================
+  // Pointer Events（重构版）
+  // ==========================================================
+
+  // 所有触摸点击都产生涟漪，不限手指数量
+  document.addEventListener('pointerdown', function (e) {
+    // 过滤可交互元素
+    if (isInteractiveElement(e.target)) return;
+
+    const xy = getCanvasXY(e.clientX, e.clientY);
+
+    // 物理涟漪
+    splashAt(xy.x, xy.y, CONFIG.clickStrength, CONFIG.clickRadiusMultiplier);
+
+    // 触摸：只产生涟漪，不进入拖动状态
+    if (e.pointerType === 'touch') return;
+
+    // 鼠标/触控笔：进入拖动状态
+    activePointerId = e.pointerId;
+    isDragging = false;
+    lastDragTime = performance.now();
+    lastDragSplashX = e.clientX;
+    lastDragSplashY = e.clientY;
+  });
+
+  // 拖动（仅鼠标/触控笔）
+  window.addEventListener('pointermove', function (e) {
+    if (e.pointerId !== activePointerId) return;
+    if (e.pointerType === 'touch') return;   // 触摸不响应拖动
+    if (e.buttons !== 1) {
+      // 左键未按下，清理拖动状态
+      resetPointerState();
+      return;
+    }
+
+    const now = performance.now();
+
+    // 首次移动超过 5px 才进入拖动
+    if (!isDragging) {
+      const dx = e.clientX - lastDragSplashX;
+      const dy = e.clientY - lastDragSplashY;
+      if (Math.sqrt(dx * dx + dy * dy) > 5) {
+        isDragging = true;
+      } else {
+        return;
+      }
+    }
+
+    // 时间节流
+    if (now - lastDragTime < CONFIG.dragTimeThrottle) return;
+
+    // 距离节流
+    const dx = e.clientX - lastDragSplashX;
+    const dy = e.clientY - lastDragSplashY;
+    if (Math.sqrt(dx * dx + dy * dy) < CONFIG.dragDistThrottle) return;
+
+    const xy = getCanvasXY(e.clientX, e.clientY);
+    splashAt(xy.x, xy.y, CONFIG.dragStrength, CONFIG.dragRadiusMultiplier);
+
+    lastDragTime = now;
+    lastDragSplashX = e.clientX;
+    lastDragSplashY = e.clientY;
+  });
+
+  function resetPointerState() {
+    activePointerId = null;
+    isDragging = false;
+  }
+
+  window.addEventListener('pointerup', function (e) {
+    if (e.pointerId === activePointerId) resetPointerState();
+  });
+
+  window.addEventListener('pointercancel', function (e) {
+    if (e.pointerId === activePointerId) resetPointerState();
+  });
+
+  // 窗口失焦时安全清理
+  window.addEventListener('blur', resetPointerState);
+
+  // ==========================================================
+  // 自动扰动（随机间隔）
+  // ==========================================================
+  function scheduleNextAutoRipple(now) {
+    if (isMobile) {
+      nextAutoRippleTime = now +
+        CONFIG.mobileAutoRippleMinInterval +
+        Math.random() * CONFIG.mobileAutoRippleIntervalRange;
+    } else {
+      nextAutoRippleTime = now +
+        CONFIG.autoRippleMinInterval +
+        Math.random() * CONFIG.autoRippleIntervalRange;
+    }
+  }
+
+  function autoSplash(now) {
+    // 页面刚加载时延迟首次触发
+    if (nextAutoRippleTime === 0) {
+      scheduleNextAutoRipple(now);
+      return;
+    }
+
+    if (now < nextAutoRippleTime) return;
+
+    const x = Math.random() * cssW;
+    const y = Math.random() * cssH;
+
+    let strMin, strMax;
+    if (isMobile) {
+      strMin = CONFIG.mobileAutoRippleStrengthMin;
+      strMax = CONFIG.mobileAutoRippleStrengthMax;
+    } else {
+      strMin = CONFIG.autoRippleStrengthMin;
+      strMax = CONFIG.autoRippleStrengthMax;
+    }
+
+    splashAt(x, y, strMin + Math.random() * (strMax - strMin));
+
+    scheduleNextAutoRipple(now);
+  }
+
+  // ==========================================================
+  // 波动传播（Verlet 二维水波）
+  // ==========================================================
   function updateWaves() {
-    for (var i = 1; i < cols - 1; i++) {
-      for (var j = 1; j < rows - 1; j++) {
-        var idx = i + j * cols;
-        // 从 cur(t) 取邻居，从 prev(t-1) 取旧值
-        var val = (
+    for (let i = 1; i < cols - 1; i++) {
+      for (let j = 1; j < rows - 1; j++) {
+        const idx = i + j * cols;
+        const val = (
           cur[(i - 1) + j * cols] +
           cur[(i + 1) + j * cols] +
           cur[i + (j - 1) * cols] +
           cur[i + (j + 1) * cols]
         ) * 0.5 - prev[idx];
-        next[idx] = val * DAMPING;
+        next[idx] = val * CONFIG.damping;
       }
     }
-    // 旋转缓冲区：prev ← cur, cur ← next, next 复用旧的 prev（已被清理）
-    var tmp = prev;
+    const tmp = prev;
     prev = cur;
     cur  = next;
     next = tmp;
-    // 清理「新的 next」边界行，确保不会残留异常值
-    for (var i = 0; i < cols; i++) {
-      next[i] = 0;                                          // 上边界
-      next[i + (rows - 1) * cols] = 0;                     // 下边界
+    for (let i = 0; i < cols; i++) {
+      next[i] = 0;
+      next[i + (rows - 1) * cols] = 0;
     }
-    for (var j = 1; j < rows - 1; j++) {
-      next[0 + j * cols] = 0;                               // 左边界
-      next[(cols - 1) + j * cols] = 0;                      // 右边界
-    }
-  }
-
-  // ---- 渲染 ----
-  function draw() {
-    var isMobile = window.innerWidth < 768;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 背景渐变（深邃的水底感）
-    var grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    grad.addColorStop(0, '#b0e4f8');
-    grad.addColorStop(0.4, '#78c8e8');
-    grad.addColorStop(1, '#4080b0');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // ---- 绘制连续水面（网格四边形） ----
-    for (var i = 0; i < cols - 1; i++) {
-      for (var j = 0; j < rows - 1; j++) {
-        var h00 = cur[i + j * cols];
-        var h10 = cur[(i + 1) + j * cols];
-        var h01 = cur[i + (j + 1) * cols];
-        var h11 = cur[(i + 1) + (j + 1) * cols];
-
-        var avgH = (h00 + h10 + h01 + h11) * 0.25;
-        var norm = Math.max(-1, Math.min(1, avgH));
-
-        // === 增强色彩映射 ===
-        // 波峰 → 亮白；波谷 → 深蓝
-        var lightness, sat;
-        if (norm > 0) {
-          lightness = 55 + norm * 40;    // 55% → 95%
-          sat = 75 - norm * 50;          // 75% → 25%（偏白）
-        } else {
-          lightness = 55 + norm * 30;    // 55% → 25%（变暗）
-          sat = 75 + Math.abs(norm) * 15; // 75% → 90%（更饱和）
-        }
-
-        ctx.fillStyle = 'hsl(198, ' + sat + '%, ' + lightness + '%)';
-        ctx.globalAlpha = 0.5 + Math.abs(norm) * 0.4;
-
-        // 折射偏移（波高扭曲顶点，模拟水面起伏）
-        var shiftScale = 1.5;
-        var shift00 = h00 * shiftScale;
-        var shift10 = h10 * shiftScale;
-        var shift01 = h01 * shiftScale;
-        var shift11 = h11 * shiftScale;
-
-        var x = i * RES;
-        var y = j * RES;
-
-        ctx.beginPath();
-        ctx.moveTo(x + shift00, y + shift00);
-        ctx.lineTo(x + RES + shift10, y + shift10);
-        ctx.lineTo(x + RES + shift11, y + RES + shift11);
-        ctx.lineTo(x + shift01, y + RES + shift01);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-    ctx.globalAlpha = 1;
-
-    // ---- 波峰白色高光线 ----
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
-    ctx.lineWidth = 1.5;
-    for (var j = 1; j < rows; j += 2) {
-      ctx.beginPath();
-      for (var i = 0; i < cols; i++) {
-        var h = cur[i + j * cols];
-        var sx = i * RES;
-        var sy = j * RES + h * 4;
-        if (i === 0) ctx.moveTo(sx, sy);
-        else ctx.lineTo(sx, sy);
-      }
-      ctx.stroke();
-    }
-
-    // ---- 镜面高光（波峰光点） ----
-    // 移动端步进更大，绘制更少高光
-    var step = isMobile ? 3 : 2;
-    for (var i = step; i < cols - step; i += step) {
-      for (var j = step; j < rows - step; j += step) {
-        var h = cur[i + j * cols];
-        if (h > 0.25) {
-          var intensity = Math.min(1, h * 0.5);
-          var sx = i * RES + h * 3;
-          var sy = j * RES + h * 3;
-          ctx.beginPath();
-          ctx.arc(sx, sy, 1.5 + intensity * 3, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255, 255, 255, ' + (intensity * 0.4) + ')';
-          ctx.fill();
-        }
-      }
-    }
-
-    // ---- 点击涟漪光晕（扩散动画） ----
-    for (var r = clickRipples.length - 1; r >= 0; r--) {
-      var rip = clickRipples[r];
-      rip.radius += (rip.maxRadius - rip.radius) * 0.06;
-      rip.life -= 0.015;
-
-      if (rip.life <= 0) {
-        clickRipples.splice(r, 1);
-        continue;
-      }
-
-      // 外圈光晕
-      var g = ctx.createRadialGradient(
-        rip.x, rip.y, 0,
-        rip.x, rip.y, rip.radius
-      );
-      g.addColorStop(0, 'rgba(255, 255, 255, ' + (rip.life * 0.2) + ')');
-      g.addColorStop(0.4, 'rgba(200, 230, 255, ' + (rip.life * 0.08) + ')');
-      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(rip.x, rip.y, rip.radius, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 内圈亮斑
-      ctx.beginPath();
-      ctx.arc(rip.x, rip.y, rip.radius * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 255, 255, ' + (rip.life * 0.25) + ')';
-      ctx.fill();
-    }
-
-    // ---- 指针位置微弱光晕 ----
-    if (lastPointerX >= 0 && lastPointerY >= 0) {
-      var pr = 16;
-      var pg = ctx.createRadialGradient(
-        lastPointerX, lastPointerY, 0,
-        lastPointerX, lastPointerY, pr
-      );
-      pg.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-      pg.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = pg;
-      ctx.beginPath();
-      ctx.arc(lastPointerX, lastPointerY, pr, 0, Math.PI * 2);
-      ctx.fill();
+    for (let j = 1; j < rows - 1; j++) {
+      next[0 + j * cols] = 0;
+      next[(cols - 1) + j * cols] = 0;
     }
   }
 
-  // ---- 主循环 ----
-  function animate(time) {
-    updateWaves();
-
-    if (!autoTimer || time - autoTimer > 1500) {
-      autoSplash();
-      autoTimer = time;
+  // ==========================================================
+  // 梯度预计算（每帧一次，供着色采样）
+  // ==========================================================
+  function computeGradients() {
+    for (let i = 1; i < cols - 1; i++) {
+      for (let j = 1; j < rows - 1; j++) {
+        const idx = i + j * cols;
+        gradientX[idx] = cur[(i + 1) + j * cols] - cur[(i - 1) + j * cols];
+        gradientY[idx] = cur[i + (j + 1) * cols] - cur[i + (j - 1) * cols];
+      }
     }
-
-    draw();
-    requestAnimationFrame(animate);
+    // 边界清零
+    for (let i = 0; i < cols; i++) {
+      gradientX[i] = 0;
+      gradientY[i] = 0;
+      const btm = i + (rows - 1) * cols;
+      gradientX[btm] = 0;
+      gradientY[btm] = 0;
+    }
+    for (let j = 1; j < rows - 1; j++) {
+      gradientX[0 + j * cols] = 0;
+      gradientY[0 + j * cols] = 0;
+      gradientX[(cols - 1) + j * cols] = 0;
+      gradientY[(cols - 1) + j * cols] = 0;
+    }
   }
 
-  animate(0);
+  // ==========================================================
+  // 渲染（梯度 → 法线 → 漫反射 → ImageData → drawImage）
+  // ==========================================================
+  function render() {
+    if (!imageData) return;
+
+    computeGradients();
+
+    const pixels = imageData.data;
+
+    const wr = CONFIG.waterR;
+    const wg = CONFIG.waterG;
+    const wb = CONFIG.waterB;
+    const nStr = CONFIG.normalStrength;
+    const amb = CONFIG.ambientLight;
+    const difStr = CONFIG.diffuseStrength;
+    const lnx = lightNormX;
+    const lny = lightNormY;
+    const lnz = lightNormZ;
+
+    for (let bj = 0; bj < bufferH; bj++) {
+      for (let bi = 0; bi < bufferW; bi++) {
+        const gi = bi / renderScale + 1;
+        const gj = bj / renderScale + 1;
+
+        const dx = sampleBilinear(gradientX, gi, gj);
+        const dy = sampleBilinear(gradientY, gi, gj);
+
+        const nx = -dx * nStr;
+        const ny = -dy * nStr;
+        const nz = 1;
+        const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+        const normalX = nx / nLen;
+        const normalY = ny / nLen;
+        const normalZ = nz / nLen;
+
+        let diffuse = normalX * lnx + normalY * lny + normalZ * lnz;
+        if (diffuse < 0) diffuse = 0;
+
+        let brightness = amb + diffuse * difStr;
+
+        // 微弱高度影响
+        const h = sampleBilinear(cur, gi, gj);
+        brightness += h * 0.05;
+        if (brightness < 0) brightness = 0;
+        if (brightness > 1) brightness = 1;
+
+        const idx = (bj * bufferW + bi) * 4;
+        pixels[idx]     = Math.round(wr * brightness);
+        pixels[idx + 1] = Math.round(wg * brightness);
+        pixels[idx + 2] = Math.round(wb * brightness);
+        pixels[idx + 3] = 255;
+      }
+    }
+
+    offCtx.putImageData(imageData, 0, 0);
+
+    // 主 Canvas 绘制
+    mainCtx.clearRect(0, 0, cssW, cssH);
+
+    const grad = mainCtx.createLinearGradient(0, 0, 0, cssH);
+    grad.addColorStop(0, CONFIG.gradientTop);
+    grad.addColorStop(0.4, CONFIG.gradientMid);
+    grad.addColorStop(1, CONFIG.gradientBottom);
+    mainCtx.fillStyle = grad;
+    mainCtx.fillRect(0, 0, cssW, cssH);
+
+    mainCtx.drawImage(offCanvas, 0, 0, cssW, cssH);
+  }
+
+  // ==========================================================
+  // 绘制静态背景（用于 reduced-motion 暂停时）
+  // ==========================================================
+  function drawStaticBackground() {
+    mainCtx.clearRect(0, 0, cssW, cssH);
+
+    const grad = mainCtx.createLinearGradient(0, 0, 0, cssH);
+    grad.addColorStop(0, CONFIG.gradientTop);
+    grad.addColorStop(0.4, CONFIG.gradientMid);
+    grad.addColorStop(1, CONFIG.gradientBottom);
+    mainCtx.fillStyle = grad;
+    mainCtx.fillRect(0, 0, cssW, cssH);
+  }
+
+  // ==========================================================
+  // 时间戳管理
+  // ==========================================================
+  function resetTimestamps() {
+    lastTimestamp = 0;
+    accumulator = 0;
+    nextAutoRippleTime = 0;
+  }
+
+  // ==========================================================
+  // 动画控制
+  // ==========================================================
+  function startAnimation() {
+    if (animationId) return;
+    resetTimestamps();
+    paused = false;
+    animationId = requestAnimationFrame(animate);
+  }
+
+  function stopAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    paused = true;
+  }
+
+  // ==========================================================
+  // 主循环
+  // ==========================================================
+  function animate(timestamp) {
+    if (reducedMotion || paused) {
+      animationId = null;
+      return;
+    }
+
+    if (!lastTimestamp) lastTimestamp = timestamp;
+
+    let dt = (timestamp - lastTimestamp) / 1000;
+    lastTimestamp = timestamp;
+
+    if (dt > CONFIG.maxDelta) dt = CONFIG.maxDelta;
+
+    accumulator += dt;
+    let steps = 0;
+
+    while (accumulator >= CONFIG.fixedStep && steps < CONFIG.maxStepsPerFrame) {
+      updateWaves();
+      accumulator -= CONFIG.fixedStep;
+      steps++;
+    }
+
+    if (steps >= CONFIG.maxStepsPerFrame) {
+      accumulator = 0;
+    }
+
+    // 自动扰动（使用真实时间戳）
+    autoSplash(timestamp);
+
+    render();
+    animationId = requestAnimationFrame(animate);
+  }
+
+  // ==========================================================
+  // 页面可见性
+  // ==========================================================
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      stopAnimation();
+    } else {
+      if (!reducedMotion) startAnimation();
+    }
+  });
+
+  // ==========================================================
+  // prefers-reduced-motion（动态监听）
+  // ==========================================================
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function handleMotionChange(e) {
+    reducedMotion = e.matches;
+    if (reducedMotion) {
+      stopAnimation();
+      // 清空模拟状态
+      if (cur) cur.fill(0);
+      if (prev) prev.fill(0);
+      if (next) next.fill(0);
+      drawStaticBackground();
+    } else {
+      resetTimestamps();
+      startAnimation();
+    }
+  }
+
+  // 初始检测
+  reducedMotion = motionQuery.matches;
+
+  // 动态监听（兼容旧版 Safari）
+  if (motionQuery.addEventListener) {
+    motionQuery.addEventListener('change', handleMotionChange);
+  } else if (motionQuery.addListener) {
+    motionQuery.addListener(handleMotionChange);
+  }
+
+  // ==========================================================
+  // 启动
+  // ==========================================================
+  if (!reducedMotion) {
+    startAnimation();
+  } else {
+    drawStaticBackground();
+  }
 })();
