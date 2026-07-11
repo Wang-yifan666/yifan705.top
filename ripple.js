@@ -53,22 +53,28 @@
     mobileAutoRippleStrengthMax: 0.12,
 
     // ---- 光照 ----
-    lightX: 0.35,
-    lightY: -0.25,
-    lightZ: 0.90,
-    normalStrength: 2.0,
-    ambientLight: 0.32,
-    diffuseStrength: 0.68,
+    lightX: 0.22,
+    lightY: -0.18,
+    lightZ: 0.96,
+    normalStrength: 1.6,
+    ambientLight: 0.40,
+    diffuseStrength: 0.50,
+
+    // ---- 水面颜色（暗/亮双色插值，替代单一基色乘法） ----
+    darkWaterR: 55,
+    darkWaterG: 135,
+    darkWaterB: 175,
+
+    lightWaterR: 155,
+    lightWaterG: 215,
+    lightWaterB: 235,
+
+    waterAlpha: 175,
 
     // ---- 背景渐变 ----
     gradientTop: '#b0e4f8',
     gradientMid: '#78c8e8',
     gradientBottom: '#4080b0',
-
-    // ---- 基础水色（RGB，用于静态背景 / 着色基色） ----
-    waterR: 86,
-    waterG: 155,
-    waterB: 184,
 
     // ---- 时间步进 ----
     fixedStep: 1 / 60,
@@ -111,6 +117,9 @@
 
   // ImageData 复用
   let imageData;
+
+  // 背景渐变缓存（仅在尺寸变化时重建）
+  let backgroundGradient = null;
 
   // ==========================================================
   // 动画状态
@@ -177,6 +186,12 @@
       offCtx = offCanvas.getContext('2d');
       imageData = offCtx.createImageData(bufferW, bufferH);
     }
+
+    // 背景渐变缓存（仅在尺寸变化时重建）
+    backgroundGradient = mainCtx.createLinearGradient(0, 0, 0, cssH);
+    backgroundGradient.addColorStop(0, CONFIG.gradientTop);
+    backgroundGradient.addColorStop(0.4, CONFIG.gradientMid);
+    backgroundGradient.addColorStop(1, CONFIG.gradientBottom);
   }
 
   function setupSimBuffers() {
@@ -262,7 +277,8 @@
   // 检查目标是否为可交互元素
   // ==========================================================
   function isInteractiveElement(target) {
-    return target.closest('a, button, input, textarea, select, summary, [role="button"]') !== null;
+    return target instanceof Element &&
+      target.closest('a, button, input, textarea, select, summary, [role="button"]') !== null;
   }
 
   // ==========================================================
@@ -453,15 +469,19 @@
 
     const pixels = imageData.data;
 
-    const wr = CONFIG.waterR;
-    const wg = CONFIG.waterG;
-    const wb = CONFIG.waterB;
+    const darkR = CONFIG.darkWaterR;
+    const darkG = CONFIG.darkWaterG;
+    const darkB = CONFIG.darkWaterB;
+    const lightR = CONFIG.lightWaterR;
+    const lightG = CONFIG.lightWaterG;
+    const lightB = CONFIG.lightWaterB;
     const nStr = CONFIG.normalStrength;
     const amb = CONFIG.ambientLight;
     const difStr = CONFIG.diffuseStrength;
     const lnx = lightNormX;
     const lny = lightNormY;
     const lnz = lightNormZ;
+    const alpha = CONFIG.waterAlpha;
 
     for (let bj = 0; bj < bufferH; bj++) {
       for (let bi = 0; bi < bufferW; bi++) {
@@ -491,10 +511,11 @@
         if (brightness > 1) brightness = 1;
 
         const idx = (bj * bufferW + bi) * 4;
-        pixels[idx]     = Math.round(wr * brightness);
-        pixels[idx + 1] = Math.round(wg * brightness);
-        pixels[idx + 2] = Math.round(wb * brightness);
-        pixels[idx + 3] = 255;
+        // 双色插值：暗水色 → 亮水色，避免通道一起乘法导致发灰
+        pixels[idx]     = Math.round(darkR + (lightR - darkR) * brightness);
+        pixels[idx + 1] = Math.round(darkG + (lightG - darkG) * brightness);
+        pixels[idx + 2] = Math.round(darkB + (lightB - darkB) * brightness);
+        pixels[idx + 3] = alpha;
       }
     }
 
@@ -503,12 +524,10 @@
     // 主 Canvas 绘制
     mainCtx.clearRect(0, 0, cssW, cssH);
 
-    const grad = mainCtx.createLinearGradient(0, 0, 0, cssH);
-    grad.addColorStop(0, CONFIG.gradientTop);
-    grad.addColorStop(0.4, CONFIG.gradientMid);
-    grad.addColorStop(1, CONFIG.gradientBottom);
-    mainCtx.fillStyle = grad;
-    mainCtx.fillRect(0, 0, cssW, cssH);
+    if (backgroundGradient) {
+      mainCtx.fillStyle = backgroundGradient;
+      mainCtx.fillRect(0, 0, cssW, cssH);
+    }
 
     mainCtx.drawImage(offCanvas, 0, 0, cssW, cssH);
   }
@@ -519,12 +538,10 @@
   function drawStaticBackground() {
     mainCtx.clearRect(0, 0, cssW, cssH);
 
-    const grad = mainCtx.createLinearGradient(0, 0, 0, cssH);
-    grad.addColorStop(0, CONFIG.gradientTop);
-    grad.addColorStop(0.4, CONFIG.gradientMid);
-    grad.addColorStop(1, CONFIG.gradientBottom);
-    mainCtx.fillStyle = grad;
-    mainCtx.fillRect(0, 0, cssW, cssH);
+    if (backgroundGradient) {
+      mainCtx.fillStyle = backgroundGradient;
+      mainCtx.fillRect(0, 0, cssW, cssH);
+    }
   }
 
   // ==========================================================
