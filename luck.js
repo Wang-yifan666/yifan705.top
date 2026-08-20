@@ -144,13 +144,24 @@ function renderDailyLuck() {
   renderList(document.getElementById("luck-bad"), luck.badList);
 }
 
-function bindRegenerateButton() {
-  const regenerateButton = document.getElementById("luck-regenerate");
+/** 渲染当前日期（不随机，页面加载即显示） */
+function renderDate() {
+  const dateElement = document.getElementById("luck-date");
+  const dateInfo = getLocalDateInfo(new Date());
 
-  regenerateButton.addEventListener("click", () => {
+  dateElement.dateTime = dateInfo.dateString;
+  dateElement.textContent = dateInfo.dateString;
+}
+
+/** 绑定「开始预测 / 再抽一次」按钮 */
+function bindActionButton() {
+  const actionButton = document.getElementById("luck-action");
+
+  actionButton.addEventListener("click", () => {
     renderDailyLuck();
+    actionButton.textContent = "再抽一次";
   });
 }
 
-bindRegenerateButton();
-renderDailyLuck();
+bindActionButton();
+renderDate();

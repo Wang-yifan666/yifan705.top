@@ -26,28 +26,32 @@
 
       <div class="luck-summary">
         <p class="luck-level-label">运势等级</p>
-        <p id="luck-level" class="luck-level">加载中</p>
+        <p id="luck-level" class="luck-level">待预测</p>
       </div>
 
       <div class="luck-grid">
         <article class="luck-box">
           <h3>宜</h3>
-          <ul id="luck-good" class="luck-list"></ul>
+          <ul id="luck-good" class="luck-list">
+            <li>——</li>
+          </ul>
         </article>
 
         <article class="luck-box">
           <h3>忌</h3>
-          <ul id="luck-bad" class="luck-list"></ul>
+          <ul id="luck-bad" class="luck-list">
+            <li>——</li>
+          </ul>
         </article>
       </div>
 
       <p class="luck-number">
-        幸运数字：<span id="luck-number">加载中</span>
+        幸运数字：<span id="luck-number">?</span>
       </p>
 
       <div class="luck-actions">
-        <button id="luck-regenerate" class="button small-button luck-action-button" type="button">
-          再抽一次
+        <button id="luck-action" class="button small-button luck-action-button" type="button">
+          开始预测
         </button>
         <a href="index.html" class="button small-button luck-home-link">
           返回首页
