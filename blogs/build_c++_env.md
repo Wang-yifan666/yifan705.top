@@ -87,11 +87,29 @@ LLVM / Clang + MinGW-w64
 llvm-mingw-日期-ucrt-x86_64.zip
 ```
 
-下载完解压，比如下文
+下载完解压，放到一个固定目录，比如下文
 
 ```
 D:\Mingw
 ```
+
+**这里有个坑**：压缩包里本身就套了一层同名文件夹，解压出来是这样：
+
+```txt
+D:\Mingw
+└─ llvm-mingw-<版本>-ucrt-x86_64
+   ├─ bin
+   ├─ include
+   ├─ lib
+   └─ x86_64-w64-mingw32
+```
+
+真正的可执行文件（`clang++`、`clangd`、`clang-format` 等）都在第二层的 `bin` 里，解压后自己进去确认一眼。所以有两个选择：
+
+- 把里层那个 `llvm-mingw-...` 文件夹整体挪到 `D:\Mingw\` 下，最终路径就是 `D:\Mingw\bin`；
+- 或者不动它，把路径记成 `D:\Mingw\llvm-mingw-<版本>-ucrt-x86_64\bin`。
+
+下面统一按第一种写法（`D:\Mingw\bin`）继续；你要是用第二种，后面所有出现 `D:\Mingw\bin` 的地方换成自己的完整路径即可。
  
 ### 5.下载`Ninja`
 
@@ -239,10 +257,12 @@ D:\vcpkg
 
 这样 CMake、VSCode 或其他工具就能更方便地找到 vcpkg 的根目录。
 
-下面需要写死路径如
-> C:/Users/15255/vcpkg/scripts/buildsystems/vcpkg.cmake
+后面在 `CMakePresets.json` 里，本来要写死这样一长串路径：
 
-就可以写为
+> D:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+有了 `VCPKG_ROOT` 之后，就可以简写成：
+
 > $env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake
 
 ### 安装`vscode`的插件
@@ -344,6 +364,10 @@ target_link_libraries(demo PRIVATE ${OpenCV_LIBS})
 
 ### 5. 编写 `CMakePresets.json`
 
+> `CMakePresets.json` 是**严格的 JSON**，不能写 `//` 注释，否则 CMake Tools 会直接报解析失败。要留说明请用 `"$comment"` 字段（要求 `version` ≥ 10），或者干脆把说明写在文章里。
+>
+> 下面 `CMAKE_TOOLCHAIN_FILE` 是按第 8 步的 `D:\vcpkg` 写的，你装在别处就换成自己的路径。
+
 ```json
 {
   "version": 3,
@@ -352,8 +376,7 @@ target_link_libraries(demo PRIVATE ${OpenCV_LIBS})
       "name": "vcpkg",
       "hidden": true,
       "cacheVariables": {
-        // 下面换成自己的地址，然后删除这行
-        "CMAKE_TOOLCHAIN_FILE": "C:/Users/15255/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "CMAKE_TOOLCHAIN_FILE": "D:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
       }
     },

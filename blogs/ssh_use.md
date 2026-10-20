@@ -2,12 +2,20 @@
 
 很多人把本地代码推到 GitHub 时，都会有“连接不上 gthub ”或者“push 失败”。一个更方便的做法，是在自己的电脑上生成一对 SSH 密钥，然后把公钥添加到 GitHub 账户里。官方文档目前推荐优先使用 Ed25519 密钥；配置完成后，就可以用 SSH 来 clone、pull、push 仓库。
 
+> **平台说明**：下面大部分命令是 macOS / Linux 终端的写法，Windows 用户在 PowerShell 里有几处不一样（`eval`、`ssh-agent -s` 这些都不通用），命令有差异的地方我都补了对应的 PowerShell 版本，照着你自己平台的写就行。
+
 ## 1. 先检查电脑里有没有现成的 SSH 密钥
 
-打开终端，输入：
+macOS / Linux 打开终端，输入：
 
 ```bash
 ls -al ~/.ssh
+```
+
+Windows 打开 PowerShell，输入：
+
+```powershell
+dir $env:USERPROFILE\.ssh
 ```
 
 如果你已经看到了类似 `id_ed25519` 和 `id_ed25519.pub` 这样的文件，说明电脑里可能已经有一套 SSH 密钥；如果没有，就继续往下生成新的。
@@ -23,7 +31,10 @@ ssh-keygen -t ed25519 -C "114514@1919.com"
 回车之后，系统会出现
 - Enter file in which to save the key (/home/usrname/.ssh/id_ed25519):
 
-上面的意思让密钥放在什么地方，一般直接回车，为默认存放地址（C:\Users\name\.ssh）就可以了
+上面这行是问你把密钥存到哪里，一般直接回车用默认位置就行：
+
+- Windows：`C:\Users\<你的用户名>\.ssh`
+- macOS / Linux：`/home/<你的用户名>/.ssh`
 
 - Enter passphrase (empty for no passphrase): 
 - Enter same passphrase again: 
@@ -33,12 +44,29 @@ ssh-keygen -t ed25519 -C "114514@1919.com"
 
 ## 3. 把私钥加入 ssh-agent
 
-生成完成后，再把私钥加入本机的 ssh-agent：
+生成完成后，再把私钥加入本机的 ssh-agent。**这一步 Windows 和 macOS / Linux 的命令完全不同，别互相照抄。**
+
+macOS / Linux：
 
 ```bash
 eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 ```
+
+Windows PowerShell（用的是系统自带的 OpenSSH Authentication Agent 服务）：
+
+```powershell
+# 把 ssh-agent 服务设为自启并启动
+Get-Service ssh-agent | Set-Service -StartupType Automatic
+Start-Service ssh-agent
+
+# 把私钥加进去
+ssh-add $env:USERPROFILE\.ssh\id_ed25519
+```
+
+> Windows 上**不要**照抄 `eval "$(ssh-agent -s)"`，`eval` 在 PowerShell 里不是这个用法，会直接报错。
+>
+> 如果提示找不到 `ssh-agent` 服务，说明系统没装 OpenSSH 客户端，去「设置 → 系统 → 可选功能 → 添加功能」里勾上 **OpenSSH 客户端**。
 
 这一步的作用是让系统在你后续连接 GitHub 时自动使用这把密钥，不用每次都重新手动指定。GitHub 官方文档给出的标准流程也是先启动 ssh-agent，再把私钥加入进去。
 
@@ -172,7 +200,7 @@ SSH 还有一个很常见的用途，就是**远程连接树莓派**。
 
 ```bash
 ssh pi@raspberrypi.local
-````
+```
 
 或者如果你知道树莓派的 IP 地址，也可以这样连接：
 
