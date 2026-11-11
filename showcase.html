@@ -22,7 +22,7 @@
 
       <nav class="project-nav">
         <button class="project-nav-button active" data-project="thunder-fighter">
-          雷霆战机 Thunder Fighter
+          奶蛋的火力不足恐惧症
         </button>
       </nav>
 
@@ -37,10 +37,10 @@
     <div class="project-detail-area">
       <article class="project-detail-card active" id="thunder-fighter">
         <span class="project-tag">C++ Game · v1.6</span>
-        <h2>雷霆战机 Thunder Fighter</h2>
+        <h2>奶蛋的火力不足恐惧症</h2>
         <p class="project-desc">
-          基于 C++17 的纵向射击小游戏：终端版（FTXUI）与 SDL3 图形版，
-          均为单文件、免安装，排行榜保存在本地。
+          Naidan's Fear of Insufficient Firepower —— 基于 C++17 的纵向射击小游戏：
+          终端版（FTXUI）与 SDL3 图形版，均为单文件、免安装，排行榜保存在本地。
         </p>
 
         <div class="detail-grid">
@@ -48,10 +48,11 @@
           <div class="detail-box">
             <h3>操作指南</h3>
             <ul>
-              <li><strong>移动：</strong>使用 W / A / S / D 控制战机移动</li>
+              <li><strong>移动：</strong>使用 W / A / S / D 控制奶蛋移动</li>
               <li><strong>攻击：</strong>Space</li>
               <li><strong>暂停：</strong>P（长按不重复）</li>
-              <li><strong>返回菜单：</strong>Q</li>
+              <li><strong>返回菜单 / 主菜单退出：</strong>Q</li>
+              <li><strong>作弊模式：</strong>F（主菜单切换，默认关闭）</li>
               <li><strong>开始游戏：</strong>启动程序后根据界面提示进入游戏</li>
               <li><strong>退出游戏：</strong>Esc（图形版还可用窗口关闭按钮）</li>
             </ul>
@@ -60,11 +61,13 @@
           <!-- 右边：项目链接 -->
           <div class="detail-box">
             <h3>项目链接</h3>
+            <!-- 每次发布新版 exe 时必须修改下面的 ?v= 值（建议用发布日期），
+                 否则浏览器和 CDN 会继续使用缓存的旧文件。 -->
             <div class="project-links vertical-links">
-              <a href="release/Thunder_fighter_jet_sdl.exe" download class="button small-button">
+              <a href="release/Thunder_fighter_jet_sdl.exe?v=20261107" download class="button small-button">
                 图形版下载
               </a>
-              <a href="release/Thunder_fighter_jet.exe" download class="button small-button">
+              <a href="release/Thunder_fighter_jet.exe?v=20261107" download class="button small-button">
                 终端版下载
               </a>
               <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet/releases" target="_blank" class="button small-button">
