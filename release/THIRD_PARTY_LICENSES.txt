@@ -1,6 +1,8 @@
-Thunder Fighter v1.6 - Third-Party Licenses
+奶蛋的火力不足恐惧症 v1.7 — 第三方组件许可
 
-This distribution statically links the components listed below.
+本程序静态链接了下列开源组件。每个小节包含该组件随包分发的许可文本。
+（v1.7 起不再包含 ftxui：终端前端已移除。）
+
 Each section contains the license text shipped with that package.
 ==================== sdl3 ====================
 Some configurations may use code licensed under the MIT and Apache-2.0 licenses.
@@ -610,30 +612,6 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Library General
 Public License instead of this License.
 
-
-
-==================== ftxui ====================
-The MIT License
-
-Copyright (c) 2019 Arthur Sonzogni.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
 
 
 ==================== brotli ====================

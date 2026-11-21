@@ -36,11 +36,11 @@
 
     <div class="project-detail-area">
       <article class="project-detail-card active" id="thunder-fighter">
-        <span class="project-tag">C++ Game · v1.6</span>
+        <span class="project-tag">C++ Game · v1.7</span>
         <h2>奶蛋的火力不足恐惧症</h2>
         <p class="project-desc">
-          Naidan's Fear of Insufficient Firepower —— 基于 C++17 的纵向射击小游戏：
-          终端版（FTXUI）与 SDL3 图形版，均为单文件、免安装，排行榜保存在本地。
+          Naidan's Fear of Insufficient Firepower —— 基于 C++17 与 SDL3 的纵向射击小游戏。
+          完全静态链接、单文件免安装，排行榜保存在本地。
         </p>
 
         <div class="detail-grid">
@@ -61,17 +61,15 @@
           <!-- 右边：项目链接 -->
           <div class="detail-box">
             <h3>项目链接</h3>
-            <!-- 每次发布新版 exe 时必须修改下面的 ?v= 值（建议用发布日期），
-                 否则浏览器和 CDN 会继续使用缓存的旧文件。 -->
+            <!-- 安装包与便携版都通过 GitHub Releases 分发（不再放进网站仓库）：
+                 仓库里存二进制会让体积迅速膨胀，而且下载速度也不如 Releases。
+                 发版流程见游戏仓库的 ROADMAP.md，打 tag 后 CI 会自动创建 Release -->
             <div class="project-links vertical-links">
-              <a href="release/Thunder_fighter_jet_sdl.exe?v=20261107" download class="button small-button">
-                图形版下载
+              <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet/releases/latest" target="_blank" class="button small-button">
+                下载游戏（安装版 / 便携版）
               </a>
-              <a href="release/Thunder_fighter_jet.exe?v=20261107" download class="button small-button">
-                终端版下载
-              </a>
-              <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet/releases" target="_blank" class="button small-button">
-                GitHub Releases
+              <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet" target="_blank" class="button small-button">
+                源码仓库
               </a>
             </div>
           </div>

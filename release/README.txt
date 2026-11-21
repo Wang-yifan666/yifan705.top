@@ -1,39 +1,32 @@
-奶蛋的火力不足恐惧症 v1.6
+奶蛋的火力不足恐惧症 v1.7
 Naidan's Fear of Insufficient Firepower
 ================================
 
-文件说明
+启动方式
 --------
-Thunder_fighter_jet.exe        终端版（FTXUI），单文件，无需 DLL
-Thunder_fighter_jet_sdl.exe    图形版（SDL3），单文件，字体与精灵已内嵌
-LICENSE-Ubuntu-Font-Licence-1.0.txt   图形版内嵌字体的授权
-THIRD_PARTY_LICENSES.txt       静态链接的第三方组件许可
+双击 Naidan.exe 即可开始游戏。
+
+安装版会从开始菜单启动；便携版解压到哪里就从哪里运行，
+存档也会留在 exe 同目录（绿色版可以把整个文件夹一起带走）。
+
+如果程序装在 Program Files 之类没有写权限的位置，
+存档会自动落到 %APPDATA%\Naidan\highscore.txt。
+也可以用环境变量 NAIDAN_DATA_DIR 指定存档目录。
 
 系统要求
 --------
-Windows 10 / 11，64 位。两个 exe 均为完全静态链接，
-不需要安装运行库或额外 DLL。
+Windows 10 / 11，64 位。完全静态链接，不需要安装运行库或额外 DLL。
 
-运行方式
---------
-终端版
-  双击运行，按 1 开始游戏，按提示选择难度。
-  建议命令行窗口至少 104 列 x 58 行，可先执行：
-      mode con: cols=110 lines=60
-
-图形版
-  双击直接进入游戏。exe 已内置图标与版本信息（右键 → 属性 可见）。
-
-键位（两版一致）
-----------------
+操作
+----
 W A S D     移动
 Space       开火
 P           暂停（按下触发，长按不重复）
-Q           游戏中返回主菜单 / 主菜单退出 / 结算界面退出
+Q           主菜单退出 / 游戏中回主菜单 / 结算界面退出
 R           结算界面重新开始
 F           主菜单切换作弊模式
+F11         全屏
 Esc         直接退出程序
-F11         全屏（仅图形版）
 
 作弊模式
 --------
@@ -61,10 +54,20 @@ F11         全屏（仅图形版）
 掉落物会慢慢下落（约 12 秒穿过全屏），碰到即拾取。
 拾取判定按玩家"看到的身体"算，压在身体上就能捡到。
 
-排行榜存档
-----------
-排行榜保存在 exe 同目录的 highscore.txt，首次运行会自动创建；
-若同目录不存在，会兼容读取上一级目录中的旧 highscore.txt。
+存档
+----
+排行榜按下列顺序选择位置：
+
+  1. 环境变量 NAIDAN_DATA_DIR
+  2. exe 同目录可写 -> 写在那里（便携模式）
+  3. exe 上一级已有 highscore.txt -> 兼容旧布局
+  4. 以上都不行 -> %APPDATA%\Naidan\highscore.txt
+
+许可
+----
+程序本体：MIT License（见 LICENSE）
+内嵌字体：Ubuntu Font Licence 1.0（见 LICENSE-Ubuntu-Font-Licence-1.0.txt）
+静态链接的第三方组件：见 THIRD_PARTY_LICENSES.txt
 
 注意
 ----
