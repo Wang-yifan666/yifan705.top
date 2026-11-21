@@ -61,12 +61,14 @@
           <!-- 右边：项目链接 -->
           <div class="detail-box">
             <h3>项目链接</h3>
-            <!-- 安装包与便携版都通过 GitHub Releases 分发（不再放进网站仓库）：
-                 仓库里存二进制会让体积迅速膨胀，而且下载速度也不如 Releases。
-                 发版流程见游戏仓库的 ROADMAP.md，打 tag 后 CI 会自动创建 Release -->
+            <!-- 安装包放在本站（4 MB，国内访问比 GitHub 稳）；便携版体积大，
+                 走 GitHub Releases。每次发版要同步更新安装包文件名里的版本号。 -->
             <div class="project-links vertical-links">
+              <a href="release/Naidan-1.7-setup.exe" download class="button small-button">
+                安装版下载（推荐）
+              </a>
               <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet/releases/latest" target="_blank" class="button small-button">
-                下载游戏（安装版 / 便携版）
+                便携版下载（GitHub）
               </a>
               <a href="https://github.com/Wang-yifan666/Thunder_fighter_jet" target="_blank" class="button small-button">
                 源码仓库
