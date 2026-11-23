@@ -1,0 +1,2 @@
+d83cad0901ba0b8ee68aacef5f7e35b1631a8cb67f6d6befa0bdcd2ae0303373  Naidan.exe
+e81ed4b43911d80fac5b775d5150009876e49eb619138b9b4effa23d1df63788  Naidan-1.9-setup.exe
